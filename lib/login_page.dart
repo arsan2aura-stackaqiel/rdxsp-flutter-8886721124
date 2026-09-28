@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'splash.dart';
 
-const String baseUrl = 'http://ilegalsrv-byzyro.r-cloud.my.id:25590';
+const String baseUrl = 'http://denis.resjamin.awet.193.smasnug.web.id:4378';
 
 // ─── Palette: Abu-abu Gelap / Charcoal ────────────────────────────────────────
 class _C {

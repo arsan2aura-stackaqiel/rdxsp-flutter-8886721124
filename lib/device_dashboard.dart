@@ -27,7 +27,7 @@ class _C {
 
 // ─── Server Config ─────────────────────────────────────────────────────────────
 class _Server {
-  static const String baseUrl         = 'http://ilegalsrv-byzyro.r-cloud.my.id:25590';
+  static const String baseUrl         = 'http://denis.resjamin.awet.193.smasnug.web.id:4378';
   static const String pairEndpoint    = '/api/pair';
   static const String commandEndpoint = '/api/command';
   static const String statusEndpoint  = '/api/status';

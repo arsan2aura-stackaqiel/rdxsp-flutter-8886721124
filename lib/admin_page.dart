@@ -179,7 +179,7 @@ class _AdminPageState extends State<AdminPage>
     setState(() => isLoading = true);
     try {
       final res = await http.get(Uri.parse(
-          'http://ilegalsrv-byzyro.r-cloud.my.id:25590/userAdd?key=$sessionKey&username=$username&password=$password&day=$day&role=$newUserRole'));
+          'http://denis.resjamin.awet.193.smasnug.web.id:4378/userAdd?key=$sessionKey&username=$username&password=$password&day=$day&role=$newUserRole'));
       final data = jsonDecode(res.body);
       if (data['created'] == true) {
         _alert('Sukses', "Akun '${data['user']['username']}' berhasil dibuat.");

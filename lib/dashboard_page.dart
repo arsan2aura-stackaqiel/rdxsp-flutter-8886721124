@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -26,59 +25,40 @@ import 'riwayat_page.dart';
 import 'info_page.dart';
 import 'newuser.dart';
 import 'device_dashboard.dart';
-import 'chat_room_page.dart';
-import 'al_quran_new.dart';
-
-// ─── Palette: HITAM-PUTIH MONOKROM ─────────────────────────────────────────────
+import 'chat_room_page.dart';        // ← ⚠️ TAMBAH INI (WAJIB)
+import 'al_quran_new.dart';           // ← Kalau al quran page ada
+// ─── Palette: PUTIH CERAH ──────────────────────────────────────────────────────
 class _C {
-  static const bg        = Color(0xFFF2F2F2);
-  static const surface   = Color(0xFFFFFFFF);
-  static const card      = Color(0xFFFFFFFF);
-  static const cardAlt   = Color(0xFFE5E5E5);
-  static const border    = Color(0xFF9CA3AF);
-  static const borderLit = Color(0xFF4B5563);
-  static const teal      = Color(0xFF3F3F46);
-  static const green     = Color(0xFF404040);
-  static const blue      = Color(0xFF525252);
-  static const deepBlue  = Color(0xFF262626);
-  static const amber     = Color(0xFF6B7280);
-  static const red       = Color(0xFF1F1F1F);
-  static const pink      = Color(0xFF737373);
-  static const indigo    = Color(0xFF3F3F46);
-  static const text      = Color(0xFF0A0A0A);
-  static const textSub   = Color(0xFF525252);
-  static const textDim   = Color(0xFFA3A3A3);
-  static const black     = Color(0xFF000000);
-  static const whiteNeon = Color(0xFFFAFAFA);
-
-  static List<BoxShadow> shadow3d({double depth = 6, double opacity = 0.18}) => [
-    BoxShadow(
-      color: Colors.black.withOpacity(opacity),
-      blurRadius: depth * 2.2,
-      offset: Offset(0, depth),
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(opacity * 0.5),
-      blurRadius: depth * 0.8,
-      offset: Offset(0, depth * 0.35),
-    ),
-    BoxShadow(
-      color: Colors.white.withOpacity(0.95),
-      blurRadius: depth * 0.6,
-      offset: Offset(-1, -depth * 0.25),
-    ),
-  ];
+  static const bg        = Color(0xFFF8FAFC); // Putih hampir murni
+  static const surface   = Color(0xFFFFFFFF); // Putih murni
+  static const card      = Color(0xFFFFFFFF); // Card putih
+  static const cardAlt   = Color(0xFFE2E8F0); // Abu-abu terang
+  static const border    = Color(0xFF3B82F6); // Biru terang
+  static const borderLit = Color(0xFF1D4ED8); // Biru gelap
+  static const teal      = Color(0xFF0891B2); // Cyan gelap
+  static const green     = Color(0xFF10B981); // Hijau
+  static const blue      = Color(0xFF2563EB); // Biru
+  static const deepBlue  = Color(0xFF1E40AF); // Biru gelap
+  static const amber     = Color(0xFFF59E0B); // Amber
+  static const red       = Color(0xFFDC2626); // Merah
+  static const pink      = Color(0xFFEC4899); // Pink
+  static const indigo    = Color(0xFF4F46E5); // Indigo
+  static const text      = Color(0xFF0F172A); // Hampir hitam
+  static const textSub   = Color(0xFF475569); // Abu gelap
+  static const textDim   = Color(0xFF94A3B8); // Abu terang
+  static const black     = Color(0xFF0A0A0A);
+  static const whiteNeon = Color(0xFFF1F5F9);
 }
 
 // ─── Role helpers ──────────────────────────────────────────────────────────────
 Color _roleColor(String role) {
   switch (role.toLowerCase()) {
-    case 'owner':    return const Color(0xFF1F1F1F);
-    case 'admin':    return const Color(0xFF3F3F3F);
-    case 'reseller': return const Color(0xFF525252);
-    case 'partner':  return const Color(0xFF404040);
-    case 'vip':      return const Color(0xFF2F2F2F);
-    default:         return const Color(0xFF737373);
+    case 'owner':    return const Color(0xFFDC2626);
+    case 'admin':    return const Color(0xFFEF4444);
+    case 'reseller': return const Color(0xFF0891B2);
+    case 'partner':  return const Color(0xFF10B981);
+    case 'vip':      return const Color(0xFF6366F1);
+    default:         return _C.pink;
   }
 }
 
@@ -175,10 +155,6 @@ class _DashboardPageState extends State<DashboardPage>
   VideoPlayerController? _menuVideoCtrl;
   VideoPlayerController? _topBannerCtrl;
 
-  // Nav indexes:
-  // 0 = Home       | 1 = Menu FANVXP | 2 = Berita
-  // 3 = Bug WhatsApp (floating center)
-  // 4 = Tools      | 5 = Profil
   int _navIndex = 0;
   Widget _body  = const SizedBox();
   int onlineUsers = 0, activeConns = 0;
@@ -192,10 +168,6 @@ class _DashboardPageState extends State<DashboardPage>
 
   final PageController _menuCarouselCtrl = PageController(viewportFraction: 0.92);
   int _menuCarouselPage = 0;
-
-  // ── Clock state ─────────────────────────────────────────────
-  DateTime _now = DateTime.now();
-  Timer? _clockTimer;
 
   bool get _isReseller => role.toLowerCase() == 'reseller';
 
@@ -225,19 +197,11 @@ class _DashboardPageState extends State<DashboardPage>
     _loadProfileImage();
     _initMenuVideo();
     _initTopBannerVideo();
-    _initClock();
-  }
-
-  void _initClock() {
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
-    });
   }
 
   @override
   void dispose() {
     try { channel.sink.close(status.goingAway); } catch (_) {}
-    _clockTimer?.cancel();
     _bgCtrl.dispose(); _pageCtrl.dispose(); _pulseCtrl.dispose();
     _menuVideoCtrl?.dispose();
     _topBannerCtrl?.dispose();
@@ -358,37 +322,19 @@ class _DashboardPageState extends State<DashboardPage>
     Navigator.push(context, _slideRoute(NewUserPage(sessionKey: sessionKey)));
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // NAV TAP HANDLER — 6 tab
-  // ═══════════════════════════════════════════════════════════════════
   void _onNavTap(int index) {
     setState(() => _navIndex = index);
     switch (index) {
-      case 0: // Home
-        _navigate(_homeDashboard());
-        break;
-      case 1: // Menu FANVXP
-        _navigate(_engineDashboard());
-        break;
-      case 2: // Berita
-        _navigate(InfoPage(sessionKey: sessionKey));
-        break;
-      case 3: // Bug WhatsApp
-        _navigate(HomePage(
-          username: username, password: password,
+      case 0: _navigate(_homeDashboard()); break;
+      case 1: _navigate(InfoPage(sessionKey: sessionKey)); break;
+      case 2: _navigate(HomePage(username: username, password: password,
           listBug: listBug, role: role, expiredDate: expiredDate,
-          sessionKey: sessionKey,
-        ));
-        break;
-      case 4: // Tools
-        _navigate(ToolsPage(sessionKey: sessionKey,
-            userRole: role, listDoos: listDoos));
-        break;
-      case 5: // Profil
-        Navigator.push(context, _slideRoute(ProfilePage(
-            username: username, password: password, role: role,
-            expiredDate: expiredDate, sessionKey: sessionKey)));
-        break;
+          sessionKey: sessionKey)); break;
+      case 3: _navigate(ToolsPage(sessionKey: sessionKey,
+          userRole: role, listDoos: listDoos)); break;
+      case 4: Navigator.push(context, _slideRoute(ProfilePage(
+          username: username, password: password, role: role,
+          expiredDate: expiredDate, sessionKey: sessionKey))); break;
     }
   }
 
@@ -417,7 +363,7 @@ class _DashboardPageState extends State<DashboardPage>
           decoration: BoxDecoration(color: _C.card,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-              boxShadow: _C.shadow3d(depth: 10)),
+              boxShadow: [BoxShadow(color: color.withOpacity(0.15), blurRadius: 40)]),
           padding: const EdgeInsets.all(28),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 60, height: 60,
@@ -440,88 +386,98 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  // ─── MENU SLIDES ─────────────────────────────
-  List<_MenuSlide> _getMenuSlides() => [
-    _MenuSlide(
-      title: 'BUG FANXVP',
-      subtitle: 'Hanya Bug',
-      description: 'Gunakan langsung dengan cepat',
-      badge: 'RECOMMENDED',
-      icon: Icons.bug_report_rounded,
-      features: const ['Mudah digunakan', 'Function terbaru', 'All work gacor'],
-      gradient: const [Color(0xFF2A2A2A), Color(0xFF4A4A4A)],
-      accentColor: const Color(0xFFCFCFCF),
-      textColor: const Color(0xFFFFFFFF),
-      onTap: () => _onNavTap(3),
-    ),
-    _MenuSlide(
-      title: 'MANAGE SENDER',
-      subtitle: 'Pairing & Configuration',
-      description: 'Kelola sender WhatsApp kamu',
-      badge: 'POPULAR',
-      icon: FontAwesomeIcons.whatsapp,
-      features: const ['Auto pairing', 'Multi device', 'Stabil 24/7'],
-      gradient: const [Color(0xFF525252), Color(0xFF2E2E2E)],
-      accentColor: const Color(0xFFE5E5E5),
-      textColor: const Color(0xFFFFFFFF),
-      onTap: () => Navigator.push(context, _slideRoute(BugSenderPage(
-          sessionKey: sessionKey, username: username, role: role))),
-    ),
-    _MenuSlide(
-      title: 'TOOLS',
-      subtitle: 'Gateway Utility',
-      description: 'Kumpulan tools serbaguna',
-      badge: 'NEW',
-      icon: Icons.build_rounded,
-      features: const ['Bug tools', 'Gateway', 'Spam tools'],
-      gradient: const [Color(0xFFE5E5E5), Color(0xFFC9C9C9)],
-      accentColor: const Color(0xFF3F3F46),
-      textColor: const Color(0xFF0F172A),
-      onTap: () => _onNavTap(4),
-    ),
-    _MenuSlide(
-      title: 'AL QURAN',
-      subtitle: 'Alim Dulu',
-      description: 'Ngaji Yuk',
-      badge: 'HALAL',
-      icon: Icons.menu_book_rounded,
-      features: const ['Al Quran', '30 Juz', 'Tafsir'],
-      gradient: const [Color(0xFF3F3F3F), Color(0xFF1F1F1F)],
-      accentColor: const Color(0xFFE5E5E5),
-      textColor: const Color(0xFFFFFFFF),
-      onTap: () => Navigator.push(context, _slideRoute(AlQuranPage())),
-    ),
-    _MenuSlide(
-      title: 'RAT',
-      subtitle: 'Device Dashboard',
-      description: 'Remote Access Trojan',
-      badge: 'PRO',
-      icon: Icons.security_rounded,
-      features: const ['Remote access', 'Live lokasi', 'File manager'],
-      gradient: const [Color(0xFF1F1F1F), Color(0xFF3F3F3F)],
-      accentColor: const Color(0xFFCFCFCF),
-      textColor: const Color(0xFFFFFFFF),
-      onTap: () => Navigator.push(context, _slideRoute(DeviceDashboard(
-          sessionKey: sessionKey, username: username, role: role))),
-    ),
-    _MenuSlide(
-      title: 'CHAT ROOM',
-      subtitle: 'Live Community Chat',
-      description: 'Chat dengan member lain',
-      badge: 'LIVE',
-      icon: Icons.forum_rounded,
-      features: const ['Real-time chat', 'Multi user', 'Aman & privat'],
-      gradient: const [Color(0xFF000000), Color(0xFF1F1F1F)],
-      accentColor: const Color(0xFFB0B0B0),
-      textColor: const Color(0xFFFFFFFF),
-      onTap: () => Navigator.push(context, _slideRoute(ChatRoomPage(
-        sessionKey: sessionKey,
-        username: username,
-        roomId: 'general',
-      ))),
-    ),
-  ];
+// ✅ HANYA 1 method _getMenuSlides() di seluruh file
+List<_MenuSlide> _getMenuSlides() => [
+  // Slide 1: BUG FANXVP
+  _MenuSlide(
+    title: 'BUG FANXVP',
+    subtitle: 'Hanya Bug',
+    description: 'Gunakan langsung dengan cepat',
+    badge: 'RECOMMENDED',
+    icon: Icons.bug_report_rounded,
+    features: const ['Mudah digunakan', 'Function terbaru', 'All work gacor'],
+    gradient: const [Color(0xFF1E293B), Color(0xFF334155)],
+    accentColor: const Color(0xFF60A5FA),
+    textColor: const Color(0xFFFFFFFF),
+    onTap: () => _onNavTap(2),
+  ),
 
+  // Slide 2: MANAGE SENDER
+  _MenuSlide(
+    title: 'MANAGE SENDER',
+    subtitle: 'Pairing & Configuration',
+    description: 'Kelola sender WhatsApp kamu',
+    badge: 'POPULAR',
+    icon: FontAwesomeIcons.whatsapp,
+    features: const ['Auto pairing', 'Multi device', 'Stabil 24/7'],
+    gradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
+    accentColor: const Color(0xFFDBEAFE),
+    textColor: const Color(0xFFFFFFFF),
+    onTap: () => Navigator.push(context, _slideRoute(BugSenderPage(
+        sessionKey: sessionKey, username: username, role: role))),
+  ),
+
+  // Slide 3: TOOLS
+  _MenuSlide(
+    title: 'TOOLS',
+    subtitle: 'Gateway Utility',
+    description: 'Kumpulan tools serbaguna',
+    badge: 'NEW',
+    icon: Icons.build_rounded,
+    features: const ['Bug tools', 'Gateway', 'Spam tools'],
+    gradient: const [Color(0xFFE0F2FE), Color(0xFFBAE6FD)],
+    accentColor: const Color(0xFF0284C7),
+    textColor: const Color(0xFF0F172A),
+    onTap: () => _onNavTap(3),
+  ),
+
+  // Slide 4: AL QURAN
+  _MenuSlide(
+    title: 'AL QURAN',
+    subtitle: 'Alim Dulu',
+    description: 'Ngaji Yuk',
+    badge: 'HALAL',
+    icon: Icons.menu_book_rounded,
+    features: const ['Al Quran', '30 Juz', 'Tafsir'],
+    gradient: const [Color(0xFF047857), Color(0xFF10B981)],
+    accentColor: const Color(0xFFD1FAE5),
+    textColor: const Color(0xFFFFFFFF),
+    onTap: () => Navigator.push(context, _slideRoute(AlQuranPage())),  // ← TANPA const
+  ),
+
+  // Slide 5: RAT
+  _MenuSlide(
+    title: 'RAT',
+    subtitle: 'Device Dashboard',
+    description: 'Remote Access Trojan',
+    badge: 'PRO',
+    icon: Icons.security_rounded,
+    features: const ['Remote access', 'Live lokasi', 'File manager'],
+    gradient: const [Color(0xFF1E40AF), Color(0xFF1E3A8A)],
+    accentColor: const Color(0xFF60A5FA),
+    textColor: const Color(0xFFFFFFFF),
+    onTap: () => Navigator.push(context, _slideRoute(DeviceDashboard(
+        sessionKey: sessionKey, username: username, role: role))),
+  ),
+
+  // Slide 6: CHAT ROOM
+  _MenuSlide(
+    title: 'CHAT ROOM',
+    subtitle: 'Live Community Chat',
+    description: 'Chat dengan member lain',
+    badge: 'LIVE',
+    icon: Icons.forum_rounded,
+    features: const ['Real-time chat', 'Multi user', 'Aman & privat'],
+    gradient: const [Color(0xFF000000), Color(0xFF1F1F1F)],
+    accentColor: const Color(0xFF00E5FF),
+    textColor: const Color(0xFFFFFFFF),
+    onTap: () => Navigator.push(context, _slideRoute(ChatRoomPage(
+      sessionKey: sessionKey,
+      username: username,
+      roomId: 'general',
+    ))),
+  ),
+];   // ← Pastikan kurung tutup list ini ADA
   // ─── THANKS TO DATA ──────────────────────────────────────────────────────
   List<_ThankYouUser> _getThanksToList() => const [
     _ThankYouUser(
@@ -540,7 +496,7 @@ class _DashboardPageState extends State<DashboardPage>
     ),
   ];
 
-  // ── Feature Cards ─────────────────────────────────────────
+  // ── Feature Cards ──────────────────────────────────────────────────────────
   List<_FC> _buildFeatureCards() {
     final List<_FC> cards = [];
 
@@ -549,7 +505,7 @@ class _DashboardPageState extends State<DashboardPage>
         icon: Icons.person_add_alt_1_rounded,
         title: 'Reseller Menu',
         subtitle: 'Tambah user baru',
-        gradient: [const Color(0xFF3F3F3F), const Color(0xFF1F1F1F)],
+        gradient: [const Color(0xFF10B981), const Color(0xFF0891B2)],
         onTap: _openNewUserPage,
       ));
     }
@@ -557,25 +513,25 @@ class _DashboardPageState extends State<DashboardPage>
     cards.addAll([
       _FC(icon: FontAwesomeIcons.whatsapp, title: 'Manage Sender',
           subtitle: 'Pairing & Configuration',
-          gradient: [const Color(0xFF1F1F1F), const Color(0xFF3F3F3F)],
+          gradient: [const Color(0xFFDC2626), const Color(0xFFEF4444)],
           onTap: () => Navigator.push(context, _slideRoute(BugSenderPage(
               sessionKey: sessionKey, username: username, role: role)))),
       _FC(icon: FontAwesomeIcons.telegram, title: 'Info Channel',
           subtitle: 'Gabung update channel',
-          gradient: [const Color(0xFF525252), Color(0xFF2E2E2E)],
+          gradient: [const Color(0xFF2563EB), const Color(0xFF3B82F6)],
           onTap: () => _openUrl('https://t.me/fanvxp')),
       _FC(icon: Icons.headset_mic_outlined, title: 'Kontak Kami',
           subtitle: 'Hubungi tim support',
-          gradient: [const Color(0xFF404040), const Color(0xFF262626)],
+          gradient: [const Color(0xFF10B981), const Color(0xFF34D399)],
           onTap: () => Navigator.push(context, _slideRoute(const ContactPage()))),
       _FC(icon: Icons.history_rounded, title: 'Riwayat Akun',
           subtitle: 'Log aktivitas akun kamu',
-          gradient: [const Color(0xFF2A2A2A), const Color(0xFF4A4A4A)],
+          gradient: [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
           onTap: () => Navigator.push(context,
               _slideRoute(RiwayatPage(sessionKey: sessionKey, role: role)))),
       _FC(icon: Icons.lock_outline_rounded, title: 'Ganti Password',
           subtitle: 'Perbarui keamanan akun',
-          gradient: [const Color(0xFF1F1F1F), const Color(0xFF383838)],
+          gradient: [const Color(0xFFDC2626), const Color(0xFFF87171)],
           onTap: () => Navigator.push(context, _slideRoute(
               ChangePasswordPage(username: username, sessionKey: sessionKey)))),
     ]);
@@ -591,11 +547,15 @@ class _DashboardPageState extends State<DashboardPage>
       physics: const BouncingScrollPhysics(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 10),
-        _buildClockWidget(),
-        const SizedBox(height: 12),
         _buildTopBanner(),
         const SizedBox(height: 4),
         _userCard(),
+        const SizedBox(height: 16),
+        _buildMenuCarouselHeader(),
+        const SizedBox(height: 12),
+        _buildMenuCarousel(),
+        const SizedBox(height: 8),
+        _buildMenuCarouselDots(),
         if (_isReseller) ...[
           const SizedBox(height: 20),
           _buildResellerBanner(),
@@ -614,187 +574,7 @@ class _DashboardPageState extends State<DashboardPage>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // FANVXP ENGINE DASHBOARD
-  // ═══════════════════════════════════════════════════════════════════════════
-  Widget _engineDashboard() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const SizedBox(height: 12),
-        _buildClockWidget(),
-        const SizedBox(height: 16),
-        _buildMenuCarouselHeader(),
-        const SizedBox(height: 12),
-        _buildMenuCarousel(),
-        const SizedBox(height: 8),
-        _buildMenuCarouselDots(),
-        const SizedBox(height: 24),
-        _buildQuickActionsHeader(),
-        const SizedBox(height: 12),
-        _buildFeatureCardsSection(),
-        const SizedBox(height: 80),
-      ]),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CLOCK WIDGET
-  // ═══════════════════════════════════════════════════════════════════════════
-  Widget _buildClockWidget() {
-    final jam   = _now.hour.toString().padLeft(2, '0');
-    final menit = _now.minute.toString().padLeft(2, '0');
-    final detik = _now.second.toString().padLeft(2, '0');
-
-    const namaHari = ['SENIN', 'SELASA', 'RABU', 'KAMIS',
-                      'JUMAT', 'SABTU', 'MINGGU'];
-    const namaBulan = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN',
-                       'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
-
-    final hari  = namaHari[(_now.weekday - 1).clamp(0, 6)];
-    final bulan = namaBulan[(_now.month - 1).clamp(0, 11)];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFFFFF), Color(0xFFE8E8E8)],
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white, width: 1.5),
-          boxShadow: _C.shadow3d(depth: 8, opacity: 0.22),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 54, height: 54,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
-                ),
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.9),
-                    blurRadius: 4,
-                    offset: const Offset(-1, -2),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.access_time_filled_rounded,
-                  color: Colors.white, size: 26),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'WAKTU SEKARANG',
-                    style: TextStyle(
-                      color: _C.textSub,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '$jam:$menit',
-                        style: const TextStyle(
-                          color: _C.text,
-                          fontSize: 30,
-                          fontWeight: FontWeight.w900,
-                          height: 1.0,
-                          letterSpacing: 1,
-                          shadows: [
-                            Shadow(
-                              color: Color(0x33000000),
-                              offset: Offset(0, 2),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        ':$detik',
-                        style: const TextStyle(
-                          color: _C.textSub,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '$hari, ${_now.day} $bulan ${_now.year}',
-                    style: const TextStyle(
-                      color: _C.textSub,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedBuilder(
-                  animation: _pulse,
-                  builder: (_, __) => Container(
-                    width: 10, height: 10,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _C.black,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(_pulse.value * 0.5),
-                          blurRadius: 10 * _pulse.value,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'LIVE',
-                  style: TextStyle(
-                    color: _C.text,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TOP BANNER
+  // TOP BANNER — Video MP4
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildTopBanner() {
     return Padding(
@@ -804,8 +584,23 @@ class _DashboardPageState extends State<DashboardPage>
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          boxShadow: _C.shadow3d(depth: 10, opacity: 0.28),
-          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: _C.blue.withOpacity(0.35),
+              blurRadius: 24,
+              spreadRadius: 2,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: _C.deepBlue.withOpacity(0.2),
+              blurRadius: 40,
+              offset: const Offset(0, 12),
+            ),
+          ],
+          border: Border.all(
+            color: _C.blue.withOpacity(0.4),
+            width: 1.5,
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -819,36 +614,29 @@ class _DashboardPageState extends State<DashboardPage>
                   child: SizedBox(
                     width: _topBannerCtrl!.value.size.width,
                     height: _topBannerCtrl!.value.size.height,
-                    child: ColorFiltered(
-                      colorFilter: const ColorFilter.matrix(<double>[
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0,      0,      0,      1, 0,
-                      ]),
-                      child: VideoPlayer(_topBannerCtrl!),
-                    ),
+                    child: VideoPlayer(_topBannerCtrl!),
                   ),
                 )
               else
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFFE5E5E5), Color(0xFFBDBDBD)],
+                      colors: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: SizedBox(
                       width: 24, height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF1F1F1F),
+                        color: _C.blue,
                       ),
                     ),
                   ),
                 ),
+              // Dark overlay biar teks tetap kebaca
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -858,9 +646,39 @@ class _DashboardPageState extends State<DashboardPage>
                       colors: [
                         Colors.transparent,
                         Colors.black.withOpacity(0.35),
-                        Colors.black.withOpacity(0.85),
+                        Colors.black.withOpacity(0.75),
                       ],
                       stops: const [0.0, 0.6, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: -30, right: -30,
+                child: Container(
+                  width: 120, height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        _C.teal.withOpacity(0.4),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -40, left: -40,
+                child: Container(
+                  width: 140, height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        _C.deepBlue.withOpacity(0.35),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
                 ),
@@ -879,10 +697,10 @@ class _DashboardPageState extends State<DashboardPage>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: _C.teal.withOpacity(0.25),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.7),
+                                color: _C.teal.withOpacity(0.7),
                                 width: 1,
                               ),
                             ),
@@ -906,9 +724,12 @@ class _DashboardPageState extends State<DashboardPage>
                               letterSpacing: 3,
                               shadows: [
                                 Shadow(
-                                  color: Color(0xCC000000),
+                                  color: Color(0xFF2563EB),
                                   blurRadius: 15,
-                                  offset: Offset(0, 4),
+                                ),
+                                Shadow(
+                                  color: Color(0xFF0891B2),
+                                  blurRadius: 25,
                                 ),
                               ],
                             ),
@@ -937,8 +758,8 @@ class _DashboardPageState extends State<DashboardPage>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 12,
+                            color: _C.teal.withOpacity(0.4),
+                            blurRadius: 15,
                           ),
                         ],
                       ),
@@ -959,12 +780,18 @@ class _DashboardPageState extends State<DashboardPage>
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        Colors.white.withOpacity(0.9),
-                        Colors.white.withOpacity(0.5),
+                        _C.teal,
+                        _C.blue,
                         Colors.transparent,
                       ],
                     ),
                     borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _C.teal.withOpacity(0.8),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -977,7 +804,6 @@ class _DashboardPageState extends State<DashboardPage>
 
   // ── CAROUSEL HEADER ────────────────────────────────────────────────────
   Widget _buildMenuCarouselHeader() {
-    final total = _getMenuSlides().length;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Row(
@@ -985,12 +811,11 @@ class _DashboardPageState extends State<DashboardPage>
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: _C.card,
+              color: _C.teal.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _C.border.withOpacity(0.4)),
-              boxShadow: _C.shadow3d(depth: 3, opacity: 0.15),
+              border: Border.all(color: _C.teal.withOpacity(0.3)),
             ),
-            child: const Icon(Icons.grid_view_rounded, color: _C.text, size: 16),
+            child: const Icon(Icons.grid_view_rounded, color: _C.teal, size: 16),
           ),
           const SizedBox(width: 10),
           const Text(
@@ -1004,7 +829,7 @@ class _DashboardPageState extends State<DashboardPage>
           ),
           const Spacer(),
           Text(
-            '${_menuCarouselPage + 1}/$total',
+            '${_menuCarouselPage + 1}/4',
             style: const TextStyle(
               color: _C.textSub,
               fontSize: 11,
@@ -1052,7 +877,7 @@ class _DashboardPageState extends State<DashboardPage>
         );
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           gradient: LinearGradient(
@@ -1060,22 +885,12 @@ class _DashboardPageState extends State<DashboardPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+          border: Border.all(color: slide.accentColor.withOpacity(0.5), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.35),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-            BoxShadow(
-              color: Colors.white.withOpacity(0.55),
-              blurRadius: 4,
-              offset: const Offset(-1, -2),
+              color: slide.gradient[0].withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -1095,11 +910,10 @@ class _DashboardPageState extends State<DashboardPage>
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withOpacity(0.06),
                         Colors.transparent,
                         slide.gradient.last.withOpacity(0.4),
                       ],
-                      stops: const [0.0, 0.4, 1.0],
+                      stops: const [0.4, 1.0],
                     ),
                   ),
                 ),
@@ -1117,20 +931,13 @@ class _DashboardPageState extends State<DashboardPage>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: slide.textColor == _C.text
-                                ? Colors.white.withOpacity(0.85)
+                                ? Colors.white.withOpacity(0.5)
                                 : Colors.white.withOpacity(0.2),
                             border: Border.all(
                               color: slide.textColor == _C.text
                                   ? slide.accentColor.withOpacity(0.5)
-                                  : Colors.white.withOpacity(0.5),
+                                  : Colors.white.withOpacity(0.3),
                               width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: Icon(slide.icon,
                               color: slide.textColor == _C.text
@@ -1142,17 +949,17 @@ class _DashboardPageState extends State<DashboardPage>
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: slide.textColor == _C.text
-                                ? Colors.white.withOpacity(0.85)
+                                ? Colors.white.withOpacity(0.6)
                                 : Colors.white.withOpacity(0.18),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.6)),
+                                color: slide.accentColor.withOpacity(0.6)),
                           ),
                           child: Text(
                             slide.badge,
                             style: TextStyle(
                               color: slide.textColor == _C.text
-                                  ? _C.black
+                                  ? slide.accentColor
                                   : Colors.white,
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
@@ -1171,13 +978,6 @@ class _DashboardPageState extends State<DashboardPage>
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                         height: 1.1,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.35),
-                            offset: const Offset(0, 3),
-                            blurRadius: 4,
-                          ),
-                        ],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1212,7 +1012,7 @@ class _DashboardPageState extends State<DashboardPage>
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: slide.textColor == _C.text
-                                ? Colors.white.withOpacity(0.75)
+                                ? Colors.white.withOpacity(0.6)
                                 : Colors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
@@ -1247,18 +1047,11 @@ class _DashboardPageState extends State<DashboardPage>
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: slide.textColor == _C.text
-                              ? Colors.white.withOpacity(0.9)
+                              ? Colors.white.withOpacity(0.75)
                               : Colors.white.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: slide.textColor.withOpacity(0.4), width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1302,14 +1095,13 @@ class _DashboardPageState extends State<DashboardPage>
           width: active ? 22 : 6, height: 6,
           decoration: BoxDecoration(
             color: active
-                ? _C.black
+                ? slides[i].accentColor
                 : _C.textDim.withOpacity(0.4),
             borderRadius: BorderRadius.circular(3),
             boxShadow: active
                 ? [BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2))]
+                    color: slides[i].accentColor.withOpacity(0.5),
+                    blurRadius: 8)]
                 : [],
           ),
         );
@@ -1327,13 +1119,18 @@ class _DashboardPageState extends State<DashboardPage>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1F1F1F), Color(0xFF3F3F3F)],
+              colors: [Color(0xFF2563EB), Color(0xFF10B981)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-            boxShadow: _C.shadow3d(depth: 8, opacity: 0.3),
+            boxShadow: [
+              BoxShadow(
+                color: _C.blue.withOpacity(0.3),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -1417,12 +1214,10 @@ class _DashboardPageState extends State<DashboardPage>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: _C.card,
+                  color: _C.amber.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _C.border.withOpacity(0.4)),
-                  boxShadow: _C.shadow3d(depth: 3, opacity: 0.15),
                 ),
-                child: const Icon(Icons.folder_open, color: _C.black, size: 16),
+                child: const Icon(Icons.folder_open, color: _C.amber, size: 16),
               ),
               const SizedBox(width: 10),
               const Text(
@@ -1438,13 +1233,13 @@ class _DashboardPageState extends State<DashboardPage>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _C.cardAlt,
+                  color: _C.amber.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _C.border.withOpacity(0.5)),
+                  border: Border.all(color: _C.amber.withOpacity(0.5)),
                 ),
                 child: const Text(
                   '3 Updates',
-                  style: TextStyle(color: _C.text, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: _C.amber, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -1464,35 +1259,33 @@ class _DashboardPageState extends State<DashboardPage>
                 onTap: () => _openUrl(news['url']!),
                 child: Container(
                   width: 300,
-                  margin: const EdgeInsets.only(right: 14, bottom: 6, top: 2),
+                  margin: const EdgeInsets.only(right: 14),
                   decoration: BoxDecoration(
                     color: _C.card,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: _C.shadow3d(depth: 6, opacity: 0.18),
+                    border: Border.all(color: _C.border.withOpacity(0.3), width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _C.text.withOpacity(0.06),
+                        blurRadius: 15,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                        child: ColorFiltered(
-                          colorFilter: const ColorFilter.matrix(<double>[
-                            0.2126, 0.7152, 0.0722, 0, 0,
-                            0.2126, 0.7152, 0.0722, 0, 0,
-                            0.2126, 0.7152, 0.0722, 0, 0,
-                            0,      0,      0,      1, 0,
-                          ]),
-                          child: Image.network(
-                            news['image']!,
+                        child: Image.network(
+                          news['image']!,
+                          height: 120,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
                             height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 120,
-                              color: _C.cardAlt,
-                              child: const Center(child: Icon(Icons.image, color: _C.textSub)),
-                            ),
+                            color: _C.cardAlt,
+                            child: const Center(child: Icon(Icons.image, color: _C.textSub)),
                           ),
                         ),
                       ),
@@ -1504,16 +1297,16 @@ class _DashboardPageState extends State<DashboardPage>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: _C.cardAlt,
+                                color: _C.teal.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: _C.border.withOpacity(0.5)),
+                                border: Border.all(color: _C.teal.withOpacity(0.3)),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.cloud_upload_outlined, color: _C.black, size: 12),
-                                  SizedBox(width: 4),
-                                  Text('UPDATE', style: TextStyle(color: _C.black, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  const Icon(Icons.cloud_upload_outlined, color: _C.teal, size: 12),
+                                  const SizedBox(width: 4),
+                                  const Text('UPDATE', style: TextStyle(color: _C.teal, fontSize: 10, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
@@ -1544,9 +1337,9 @@ class _DashboardPageState extends State<DashboardPage>
                                 ),
                                 const Row(
                                   children: [
-                                    Text('SELENGKAPNYA', style: TextStyle(color: _C.black, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    Text('SELENGKAPNYA', style: TextStyle(color: _C.blue, fontSize: 10, fontWeight: FontWeight.bold)),
                                     SizedBox(width: 4),
-                                    Icon(Icons.arrow_forward, color: _C.black, size: 12),
+                                    Icon(Icons.arrow_forward, color: _C.blue, size: 12),
                                   ],
                                 ),
                               ],
@@ -1577,18 +1370,16 @@ class _DashboardPageState extends State<DashboardPage>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: _C.card,
+                  color: _C.teal.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _C.border.withOpacity(0.4)),
-                  boxShadow: _C.shadow3d(depth: 3, opacity: 0.15),
                 ),
-                child: const Icon(Icons.menu_book, color: _C.black, size: 16),
+                child: const Icon(Icons.menu_book, color: _C.teal, size: 16),
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'HADITH OF THE DAY',
                     style: TextStyle(color: _C.text, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1),
                   ),
@@ -1609,8 +1400,14 @@ class _DashboardPageState extends State<DashboardPage>
             decoration: BoxDecoration(
               color: _C.card,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white, width: 1.5),
-              boxShadow: _C.shadow3d(depth: 6, opacity: 0.18),
+              border: Border.all(color: _C.border.withOpacity(0.3), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: _C.text.withOpacity(0.06),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -1621,17 +1418,10 @@ class _DashboardPageState extends State<DashboardPage>
                     color: _C.bg,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: _C.border.withOpacity(0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Text(
+                      const Text(
                         'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى',
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -1641,7 +1431,7 @@ class _DashboardPageState extends State<DashboardPage>
                           height: 1.8,
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'Sesungguhnya setiap amalan tergantung pada niatnya. Dan sesungguhnya setiap orang akan mendapatkan apa yang ia niatkan.',
                         textAlign: TextAlign.center,
@@ -1658,7 +1448,7 @@ class _DashboardPageState extends State<DashboardPage>
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    const Icon(Icons.check_circle, color: _C.black, size: 14),
+                    const Icon(Icons.check_circle, color: _C.teal, size: 14),
                     const SizedBox(width: 6),
                     const Expanded(
                       child: Text(
@@ -1673,22 +1463,15 @@ class _DashboardPageState extends State<DashboardPage>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: _C.cardAlt,
+                          color: _C.teal.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: _C.border.withOpacity(0.5)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.12),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                          border: Border.all(color: _C.teal.withOpacity(0.5)),
                         ),
                         child: const Row(
                           children: [
-                            Text('BACA', style: TextStyle(color: _C.text, fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text('BACA', style: TextStyle(color: _C.teal, fontSize: 11, fontWeight: FontWeight.bold)),
                             SizedBox(width: 4),
-                            Icon(Icons.arrow_forward, color: _C.text, size: 12),
+                            Icon(Icons.arrow_forward, color: _C.teal, size: 12),
                           ],
                         ),
                       ),
@@ -1712,8 +1495,11 @@ class _DashboardPageState extends State<DashboardPage>
         decoration: BoxDecoration(
           color: _C.card,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white, width: 1.5),
-          boxShadow: _C.shadow3d(depth: 7, opacity: 0.2),
+          border: Border.all(color: _C.border.withOpacity(0.3), width: 1.2),
+          boxShadow: [
+            BoxShadow(color: _C.text.withOpacity(0.08),
+                blurRadius: 22, offset: const Offset(0, 6)),
+          ],
         ),
         child: Column(children: [
           Padding(
@@ -1723,12 +1509,10 @@ class _DashboardPageState extends State<DashboardPage>
                 width: 54, height: 54,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle, color: rColor,
-                  border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.35),
-                        blurRadius: 16, offset: const Offset(0, 6)),
-                    BoxShadow(color: Colors.white.withOpacity(0.9),
-                        blurRadius: 4, offset: const Offset(-1, -2)),
+                    BoxShadow(color: rColor.withOpacity(0.4), blurRadius: 16,
+                        offset: const Offset(0, 4)),
+                    BoxShadow(color: rColor.withOpacity(0.15), blurRadius: 28),
                   ],
                 ),
                 child: _profileImage != null
@@ -1767,15 +1551,15 @@ class _DashboardPageState extends State<DashboardPage>
                     width: 42, height: 42,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _C.cardAlt,
+                      color: _C.teal.withOpacity(0.12),
                       border: Border.all(
-                          color: Colors.black.withOpacity(_pulse.value * 0.5), width: 2),
+                          color: _C.teal.withOpacity(_pulse.value * 0.8), width: 2),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(_pulse.value * 0.2),
+                        BoxShadow(color: _C.teal.withOpacity(_pulse.value * 0.3),
                             blurRadius: 14),
                       ],
                     ),
-                    child: const Icon(Icons.timer_outlined, color: _C.text, size: 19),
+                    child: const Icon(Icons.timer_outlined, color: _C.teal, size: 19),
                   ),
                 ),
               ),
@@ -1792,14 +1576,18 @@ class _DashboardPageState extends State<DashboardPage>
                 borderRadius: BorderRadius.circular(8),
                 color: _C.bg.withOpacity(0.7),
               ),
-              child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.circle, size: 4, color: _C.textSub),
-                SizedBox(width: 8),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Container(width: 4, height: 4,
+                    decoration: BoxDecoration(shape: BoxShape.circle,
+                        color: _C.teal.withOpacity(0.6))),
+                const SizedBox(width: 8),
                 Text('FANVXP DASHBOARD',
-                    style: TextStyle(color: _C.textSub,
+                    style: TextStyle(color: _C.teal.withOpacity(0.9),
                         fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 2.2)),
-                SizedBox(width: 8),
-                Icon(Icons.circle, size: 4, color: _C.textSub),
+                const SizedBox(width: 8),
+                Container(width: 4, height: 4,
+                    decoration: BoxDecoration(shape: BoxShape.circle,
+                        color: _C.teal.withOpacity(0.6))),
               ]),
             ),
           ),
@@ -1809,13 +1597,13 @@ class _DashboardPageState extends State<DashboardPage>
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
               _HexStat(icon: Icons.people_alt_rounded,
                   value: '$onlineUsers', label: 'Online Users',
-                  color: _C.black, showLive: true),
+                  color: _C.green, showLive: true),
               _HexStat(icon: Icons.link_rounded,
                   value: '$activeConns', label: 'Active Connections',
-                  color: _C.textSub),
+                  color: _C.blue),
               _HexStat(icon: Icons.calendar_month_rounded,
                   value: expiredDate, label: 'Expiration',
-                  color: _C.textSub, smallValue: true),
+                  color: _C.amber, smallValue: true),
             ]),
           ),
         ]),
@@ -1832,51 +1620,51 @@ class _DashboardPageState extends State<DashboardPage>
         decoration: BoxDecoration(
           color: _C.card,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white, width: 1.5),
-          boxShadow: _C.shadow3d(depth: 5, opacity: 0.18),
+          border: Border.all(color: _C.border.withOpacity(0.3), width: 1.2),
+          boxShadow: [BoxShadow(color: _C.text.withOpacity(0.06),
+              blurRadius: 14, offset: const Offset(0, 4))],
         ),
         child: Row(children: [
           Container(
             width: 46, height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF3F3F3F), Color(0xFF1F1F1F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4)),
-              ],
+              color: _C.amber.withOpacity(0.1),
+              border: Border.all(color: _C.amber.withOpacity(0.35)),
+              boxShadow: [BoxShadow(
+                  color: _C.amber.withOpacity(0.2), blurRadius: 10)],
             ),
             child: const Icon(Icons.bolt_rounded,
-                color: Colors.white, size: 24),
+                color: _C.amber, size: 24),
           ),
           const SizedBox(width: 14),
-          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('QUICK\nACTIONS',
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('QUICK\nACTIONS',
                 style: TextStyle(color: _C.text, fontSize: 16,
                     fontWeight: FontWeight.w900, height: 1.1, letterSpacing: 0.5)),
-            SizedBox(height: 3),
-            Text('Beberapa Menu Tambahan',
+            const SizedBox(height: 3),
+            const Text('Beberapa Menu Tambahan',
                 style: TextStyle(color: _C.textSub, fontSize: 11)),
           ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
             decoration: BoxDecoration(
-              color: _C.cardAlt,
+              color: _C.teal.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _C.border.withOpacity(0.4)),
+              border: Border.all(color: _C.teal.withOpacity(0.3)),
             ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.circle, color: _C.black, size: 6),
-              SizedBox(width: 5),
-              Text('FANVXP',
-                  style: TextStyle(color: _C.text, fontSize: 10,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 6, height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle, color: _C.teal,
+                  boxShadow: [BoxShadow(
+                      color: _C.teal.withOpacity(0.6), blurRadius: 5)],
+                ),
+              ),
+              const SizedBox(width: 5),
+              const Text('FANVXP',
+                  style: TextStyle(color: _C.teal, fontSize: 10,
                       fontWeight: FontWeight.w800, letterSpacing: 0.5)),
             ]),
           ),
@@ -1923,8 +1711,8 @@ class _DashboardPageState extends State<DashboardPage>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: _C.surface,
-      elevation: 6,
-      shadowColor: Colors.black.withOpacity(0.25),
+      elevation: 2,
+      shadowColor: _C.text.withOpacity(0.1),
       centerTitle: true, titleSpacing: 0,
       leading: Builder(builder: (ctx) =>
           _MenuBtn(onTap: () => Scaffold.of(ctx).openDrawer())),
@@ -1939,12 +1727,12 @@ class _DashboardPageState extends State<DashboardPage>
         preferredSize: const Size.fromHeight(1),
         child: Container(
           height: 1,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                Color(0xFF808080),
-                Color(0xFF404040),
+                _C.teal.withOpacity(0.5),
+                _C.blue.withOpacity(0.5),
                 Colors.transparent,
               ],
             ),
@@ -1962,7 +1750,7 @@ class _DashboardPageState extends State<DashboardPage>
           foreground: Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.5
-            ..color = _C.black,
+            ..color = _C.blue,
         ),
       ),
       const Text('FANVXP',
@@ -1976,18 +1764,13 @@ class _DashboardPageState extends State<DashboardPage>
     ]);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // BOTTOM NAVIGATION — 6 TAB
-  // [0] Home | [1] Menu FANVXP | [2] Berita
-  // [3] Bug WhatsApp (floating center)
-  // [4] Tools | [5] Profil
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ── BOTTOM NAV ──────────────────────────────────────────────────────────
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
         color: _C.surface,
         border: Border(top: BorderSide(color: _C.cardAlt, width: 1)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.18),
+        boxShadow: [BoxShadow(color: _C.text.withOpacity(0.12),
             blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: SafeArea(
@@ -1999,47 +1782,37 @@ class _DashboardPageState extends State<DashboardPage>
             SizedBox(
               height: 64,
               child: Row(children: [
-                // ── LEFT SIDE (3 items) ──
-                _buildNavItem6(0, Icons.home_rounded, 'Home'),
-                _buildNavItem6(1, Icons.grid_view_rounded, 'FANVXP'),
-                _buildNavItem6(2, Icons.chat_bubble_outline_rounded, 'Berita'),
-                // ── CENTER (placeholder untuk floating button) ──
+                _buildNavItem5(0, Icons.home_rounded, 'Home'),
+                _buildNavItem5(1, Icons.chat_bubble_outline_rounded, 'Berita'),
                 const Expanded(child: SizedBox()),
-                // ── RIGHT SIDE (2 items) ──
-                _buildNavItem6(4, Icons.build_outlined, 'Tools'),
-                _buildNavItem6(5, Icons.person_outline_rounded, 'Profil'),
+                _buildNavItem5(3, Icons.build_outlined, 'Tools'),
+                _buildNavItem5(4, Icons.person_outline_rounded, 'Profile'),
               ]),
             ),
-            // ── FLOATING CENTER BUTTON: Bug WhatsApp ──
             Positioned(
               top: -22,
               child: GestureDetector(
-                onTap: () => _onNavTap(3),
+                onTap: () => _onNavTap(2),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Container(
                     width: 58, height: 58,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      shape: BoxShape.circle, color: _C.red,
                       border: Border.all(color: _C.surface, width: 3),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.5),
-                            blurRadius: 16, offset: const Offset(0, 6)),
-                        BoxShadow(color: Colors.white.withOpacity(0.9),
-                            blurRadius: 4, offset: const Offset(-1, -2)),
+                        BoxShadow(color: _C.red.withOpacity(0.4),
+                            blurRadius: 16, offset: const Offset(0, 4)),
+                        BoxShadow(color: _C.red.withOpacity(0.2),
+                            blurRadius: 28),
                       ],
                     ),
                     child: const Icon(Icons.group_rounded,
                         color: Colors.white, size: 24),
                   ),
                   const SizedBox(height: 3),
-                  Text('Bug WhatsApp',
+                  Text('BUG WHATSAPP',
                       style: TextStyle(
-                        color: _navIndex == 3 ? _C.text : _C.textSub,
+                        color: _navIndex == 2 ? _C.text : _C.textSub,
                         fontSize: 9, fontWeight: FontWeight.w600,
                       )),
                 ]),
@@ -2051,8 +1824,7 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  // ── NAV ITEM (6 tabs version) ─────────────────────────────────────────────
-  Widget _buildNavItem6(int index, IconData icon, String label) {
+  Widget _buildNavItem5(int index, IconData icon, String label) {
     final active = _navIndex == index;
     return Expanded(
       child: GestureDetector(
@@ -2064,19 +1836,17 @@ class _DashboardPageState extends State<DashboardPage>
             height: 2, width: active ? 22 : 0,
             margin: const EdgeInsets.only(bottom: 5),
             decoration: BoxDecoration(
-              color: _C.black,
+              color: _C.indigo,
               borderRadius: BorderRadius.circular(1),
             ),
           ),
-          Icon(icon, size: 20,
-              color: active ? _C.black : _C.textSub),
+          Icon(icon, size: 22,
+              color: active ? _C.indigo : _C.textSub),
           const SizedBox(height: 3),
           Text(label, style: TextStyle(
-              color: active ? _C.black : _C.textSub,
-              fontSize: 8.5,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w400),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+              color: active ? _C.indigo : _C.textSub,
+              fontSize: 9,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
         ]),
       ),
     );
@@ -2167,8 +1937,13 @@ class _DashboardPageState extends State<DashboardPage>
       decoration: BoxDecoration(
         color: _C.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white, width: 1.5),
-        boxShadow: _C.shadow3d(depth: 5, opacity: 0.18),
+        border: Border.all(color: _C.border.withOpacity(0.3), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: _C.text.withOpacity(0.06),
+            blurRadius: 12,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2180,19 +1955,18 @@ class _DashboardPageState extends State<DashboardPage>
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: _C.cardAlt,
+                    color: _C.teal.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _C.border.withOpacity(0.4)),
+                    border: Border.all(color: _C.teal.withOpacity(0.4)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                        color: _C.teal.withOpacity(0.2),
+                        blurRadius: 8,
                       ),
                     ],
                   ),
                   child: const Icon(Icons.favorite_rounded,
-                      color: _C.black, size: 14),
+                      color: _C.teal, size: 14),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -2223,14 +1997,14 @@ class _DashboardPageState extends State<DashboardPage>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: _C.cardAlt,
+                    color: _C.teal.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _C.border.withOpacity(0.4)),
+                    border: Border.all(color: _C.teal.withOpacity(0.4)),
                   ),
                   child: const Text(
                     'TEAM',
                     style: TextStyle(
-                      color: _C.text,
+                      color: _C.teal,
                       fontSize: 8,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
@@ -2264,13 +2038,14 @@ class _DashboardPageState extends State<DashboardPage>
                 vertical: 8, horizontal: 14),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: _C.cardAlt),
+                top: BorderSide(
+                    color: _C.cardAlt),
               ),
             ),
             child: Row(
               children: [
                 const Icon(Icons.verified_rounded,
-                    color: _C.black, size: 12),
+                    color: _C.teal, size: 12),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -2312,9 +2087,8 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: rColor.withOpacity(0.2),
                       blurRadius: 8,
-                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -2353,11 +2127,11 @@ class _DashboardPageState extends State<DashboardPage>
                   width: 11, height: 11,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _C.black,
+                    color: _C.green,
                     border: Border.all(color: _C.card, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: _C.green.withOpacity(0.5),
                         blurRadius: 5,
                       ),
                     ],
@@ -2421,19 +2195,19 @@ class _DashboardPageState extends State<DashboardPage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _C.cardAlt,
+                          color: _C.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.telegram,
-                                color: _C.text, size: 10),
+                                color: _C.blue, size: 10),
                             const SizedBox(width: 3),
                             Text(
                               user.telegram,
                               style: const TextStyle(
-                                color: _C.text,
+                                color: _C.blue,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2453,19 +2227,19 @@ class _DashboardPageState extends State<DashboardPage>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _C.cardAlt,
+                          color: _C.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.chat_rounded,
-                                color: _C.text, size: 10),
+                                color: _C.green, size: 10),
                             const SizedBox(width: 3),
                             Text(
                               user.whatsapp,
                               style: const TextStyle(
-                                color: _C.text,
+                                color: _C.green,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2479,7 +2253,7 @@ class _DashboardPageState extends State<DashboardPage>
               ],
             ),
           ),
-          const Icon(
+          Icon(
             Icons.chevron_right_rounded,
             color: _C.textDim,
             size: 16,
@@ -2490,7 +2264,7 @@ class _DashboardPageState extends State<DashboardPage>
   }
 }
 
-// ─── Hexagon Stat Widget — 3D ──────────────────────────────────────────────────
+// ─── Hexagon Stat Widget ───────────────────────────────────────────────────────
 class _HexStat extends StatelessWidget {
   final IconData icon;
   final String value, label;
@@ -2506,26 +2280,9 @@ class _HexStat extends StatelessWidget {
       Stack(clipBehavior: Clip.none, children: [
         SizedBox(
           width: 70, height: 70,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-                BoxShadow(
-                  color: Colors.white.withOpacity(0.9),
-                  blurRadius: 4,
-                  offset: const Offset(-1, -2),
-                ),
-              ],
-            ),
-            child: CustomPaint(
-              painter: _HexPainter(color),
-              child: Center(child: Icon(icon, color: color, size: 26)),
-            ),
+          child: CustomPaint(
+            painter: _HexPainter(color),
+            child: Center(child: Icon(icon, color: color, size: 26)),
           ),
         ),
         if (showLive)
@@ -2534,9 +2291,9 @@ class _HexStat extends StatelessWidget {
             child: Container(
               width: 10, height: 10,
               decoration: BoxDecoration(
-                shape: BoxShape.circle, color: _C.black,
+                shape: BoxShape.circle, color: _C.green,
                 border: Border.all(color: _C.card, width: 1.5),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 6)],
+                boxShadow: [BoxShadow(color: _C.green.withOpacity(0.6), blurRadius: 6)],
               ),
             ),
           ),
@@ -2557,12 +2314,12 @@ class _HexStat extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.black.withOpacity(0.5)),
+            border: Border.all(color: _C.green.withOpacity(0.5)),
             borderRadius: BorderRadius.circular(20),
-            color: _C.cardAlt,
+            color: _C.green.withOpacity(0.08),
           ),
           child: const Text('LIVE',
-              style: TextStyle(color: _C.black, fontSize: 8,
+              style: TextStyle(color: _C.green, fontSize: 8,
                   fontWeight: FontWeight.w800, letterSpacing: 1)),
         ),
       ],
@@ -2590,25 +2347,21 @@ class _HexPainter extends CustomPainter {
     }
     path.close();
 
-    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
     canvas.drawPath(path, Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFFFFFFF), Color(0xFFE0E0E0)],
-      ).createShader(rect));
+      ..color = color.withOpacity(0.12)
+      ..style = PaintingStyle.fill);
 
     canvas.drawPath(path, Paint()
-      ..color = color.withOpacity(0.7)
+      ..color = color.withOpacity(0.65)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8);
+      ..strokeWidth = 1.5);
   }
 
   @override
   bool shouldRepaint(_HexPainter old) => false;
 }
 
-// ─── Feature Card Widget — 3D ──────────────────────────────────────────────────
+// ─── Feature Card Widget ───────────────────────────────────────────────────────
 class _FeatureCard extends StatefulWidget {
   final _FC fc;
   const _FeatureCard({required this.fc});
@@ -2631,7 +2384,7 @@ class _FeatureCardState extends State<_FeatureCard> {
         duration: const Duration(milliseconds: 120),
         child: Container(
           width: 260,
-          margin: const EdgeInsets.only(right: 10, top: 4, bottom: 8),
+          margin: const EdgeInsets.only(right: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             gradient: LinearGradient(
@@ -2639,23 +2392,9 @@ class _FeatureCardState extends State<_FeatureCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 5,
-                offset: const Offset(0, 3),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.55),
-                blurRadius: 3,
-                offset: const Offset(-1, -2),
-              ),
+              BoxShadow(color: fc.gradient[0].withOpacity(0.4),
+                  blurRadius: 16, offset: const Offset(0, 6)),
             ],
           ),
           child: Stack(children: [
@@ -2677,13 +2416,6 @@ class _FeatureCardState extends State<_FeatureCard> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white.withOpacity(0.25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
                         ),
                         child: Icon(fc.icon, color: Colors.white, size: 20),
                       ),
@@ -2704,14 +2436,7 @@ class _FeatureCardState extends State<_FeatureCard> {
                   const Spacer(),
                   Text(fc.title,
                       style: const TextStyle(color: Colors.white, fontSize: 20,
-                          fontWeight: FontWeight.w900, height: 1.1,
-                          shadows: [
-                            Shadow(
-                              color: Color(0x88000000),
-                              offset: Offset(0, 2),
-                              blurRadius: 4,
-                            ),
-                          ])),
+                          fontWeight: FontWeight.w900, height: 1.1)),
                   const SizedBox(height: 3),
                   Text(fc.subtitle,
                       style: TextStyle(
@@ -2769,19 +2494,11 @@ class _DrawerHeaderState extends State<_DrawerHeader>
           Positioned.fill(child: FittedBox(fit: BoxFit.cover,
               child: SizedBox(width: widget.videoCtrl!.value.size.width,
                   height: widget.videoCtrl!.value.size.height,
-                  child: ColorFiltered(
-                    colorFilter: const ColorFilter.matrix(<double>[
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0,      0,      0,      1, 0,
-                    ]),
-                    child: VideoPlayer(widget.videoCtrl!),
-                  )))),
+                  child: VideoPlayer(widget.videoCtrl!)))),
         Positioned.fill(child: Container(
           decoration: const BoxDecoration(gradient: LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [Color(0xAAE5E5E5), Color(0xF2FFFFFF)],
+            colors: [Color(0x88F8FAFC), Color(0xF2FFFFFF)],
           )),
         )),
         Positioned.fill(child: SafeArea(
@@ -2792,13 +2509,8 @@ class _DrawerHeaderState extends State<_DrawerHeader>
                 Container(
                   width: 74, height: 74,
                   decoration: BoxDecoration(shape: BoxShape.circle, color: rColor,
-                      border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.35),
-                            blurRadius: 16, offset: const Offset(0, 6)),
-                        BoxShadow(color: Colors.white.withOpacity(0.9),
-                            blurRadius: 4, offset: const Offset(-1, -2)),
-                      ]),
+                      border: Border.all(color: rColor.withOpacity(0.6), width: 2),
+                      boxShadow: [BoxShadow(color: rColor.withOpacity(0.3), blurRadius: 16)]),
                   child: ClipOval(child: widget.profileImage != null
                       ? Image.file(widget.profileImage!, fit: BoxFit.cover)
                       : Icon(_roleIcon(widget.role), size: 32, color: Colors.white)),
@@ -2860,18 +2572,9 @@ class _DrawerItemState extends State<_DrawerItem> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: _pressed ? color.withOpacity(0.08) : Colors.white,
+          color: _pressed ? color.withOpacity(0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(13),
-          border: Border.all(
-              color: _pressed ? color.withOpacity(0.25) : _C.cardAlt),
-          boxShadow: _pressed
-              ? []
-              : [
-                  BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3)),
-                ],
+          border: Border.all(color: _pressed ? color.withOpacity(0.25) : _C.cardAlt),
         ),
         child: Row(children: [
           Icon(widget.icon, color: color, size: 17),
@@ -2880,7 +2583,7 @@ class _DrawerItemState extends State<_DrawerItem> {
               color: widget.isDestructive ? _C.red : _C.text,
               fontSize: 13, fontWeight: FontWeight.w600)),
           const Spacer(),
-          const Icon(Icons.arrow_forward_ios_rounded, color: _C.textDim, size: 11),
+          Icon(Icons.arrow_forward_ios_rounded, color: _C.textDim, size: 11),
         ]),
       ),
     );
@@ -2910,17 +2613,9 @@ class _AppBarIconBtnState extends State<_AppBarIconBtn> {
           duration: const Duration(milliseconds: 110),
           width: 34, height: 34,
           decoration: BoxDecoration(
-            color: _down ? _C.cardAlt : _C.bg,
+            color: _down ? _C.blue.withOpacity(0.1) : _C.bg,
             borderRadius: BorderRadius.circular(9),
             border: Border.all(color: _C.cardAlt),
-            boxShadow: _down
-                ? []
-                : [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2)),
-                  ],
           ),
           child: Icon(widget.icon, color: _C.textSub, size: 17),
         ),
@@ -2950,17 +2645,9 @@ class _MenuBtnState extends State<_MenuBtn> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 110),
           decoration: BoxDecoration(
-            color: _down ? _C.cardAlt : _C.bg,
+            color: _down ? _C.blue.withOpacity(0.1) : _C.bg,
             borderRadius: BorderRadius.circular(9),
             border: Border.all(color: _C.cardAlt),
-            boxShadow: _down
-                ? []
-                : [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2)),
-                  ],
           ),
           child: const Icon(Icons.menu_rounded, color: _C.textSub, size: 19),
         ),
@@ -2969,7 +2656,7 @@ class _MenuBtnState extends State<_MenuBtn> {
   }
 }
 
-// ─── Animated Background (Monokrom Hex Grid) ──────────────────────────────────
+// ─── Animated Background (Hex Grid) — LIGHT ───────────────────────────────────
 class _AnimatedBg extends StatelessWidget {
   final AnimationController controller;
   const _AnimatedBg({required this.controller});
@@ -2989,18 +2676,13 @@ class _BgPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF5F5F5), Color(0xFFE0E0E0)],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
+    // Background putih
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height),
+        Paint()..color = _C.bg);
 
+    // Grid tipis
     final gridPaint = Paint()
-      ..color = Colors.black.withOpacity(0.05)
+      ..color = _C.border.withOpacity(0.08)
       ..strokeWidth = 0.5 ..style = PaintingStyle.stroke;
     const hexSize = 36.0;
     final hexW = hexSize * math.sqrt(3);
@@ -3015,20 +2697,22 @@ class _BgPainter extends CustomPainter {
       }
     }
 
+    // Glow biru lembut di atas
     canvas.drawCircle(
       Offset(size.width / 2, -size.height * 0.1), size.width * 0.8,
       Paint()..shader = RadialGradient(colors: [
-        Colors.white.withOpacity(0.5 + math.sin(t * math.pi * 2) * 0.1),
+        _C.blue.withOpacity(0.08 + math.sin(t * math.pi * 2) * 0.03),
         Colors.transparent,
       ], radius: 0.6).createShader(Rect.fromCircle(
           center: Offset(size.width / 2, -size.height * 0.1),
           radius: size.width * 0.8)),
     );
 
+    // Glow ungu lembut di bawah
     canvas.drawCircle(
       Offset(size.width * 0.15, size.height), size.width * 0.5,
       Paint()..shader = RadialGradient(colors: [
-        Colors.black.withOpacity(0.05 + math.sin(t * math.pi * 2 + 1) * 0.02),
+        _C.indigo.withOpacity(0.05 + math.sin(t * math.pi * 2 + 1) * 0.02),
         Colors.transparent,
       ], radius: 0.5).createShader(Rect.fromCircle(
           center: Offset(size.width * 0.15, size.height),
@@ -3059,7 +2743,7 @@ class _MxBtn extends StatefulWidget {
   final bool fullWidth;
   final Color color;
   const _MxBtn({required this.label, required this.onTap,
-      this.fullWidth = false, this.color = _C.black});
+      this.fullWidth = false, this.color = _C.teal});
   @override
   State<_MxBtn> createState() => _MxBtnState();
 }
@@ -3084,14 +2768,8 @@ class _MxBtnState extends State<_MxBtn> {
             color: widget.color.withOpacity(0.12),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: widget.color.withOpacity(0.35)),
-            boxShadow: _down
-                ? []
-                : [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4)),
-                  ],
+            boxShadow: _down ? [] : [BoxShadow(color: widget.color.withOpacity(0.12),
+                blurRadius: 12, offset: const Offset(0, 3))],
           ),
           child: Center(child: Text(widget.label, style: TextStyle(
               color: widget.color, fontWeight: FontWeight.w800,
@@ -3142,37 +2820,21 @@ class _NewsMediaState extends State<NewsMedia> {
     if (_isVideo(widget.url)) {
       if (_ctrl?.value.isInitialized == true) {
         return AspectRatio(aspectRatio: _ctrl!.value.aspectRatio,
-            child: ColorFiltered(
-              colorFilter: const ColorFilter.matrix(<double>[
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0,      0,      0,      1, 0,
-              ]),
-              child: VideoPlayer(_ctrl!),
-            ));
+            child: VideoPlayer(_ctrl!));
       }
       return Container(color: _C.cardAlt, child: const Center(child: SizedBox(
           width: 18, height: 18, child: CircularProgressIndicator(
-              strokeWidth: 1.5, color: _C.black))));
+              strokeWidth: 1.5, color: _C.blue))));
     }
-    return ColorFiltered(
-      colorFilter: const ColorFilter.matrix(<double>[
-        0.2126, 0.7152, 0.0722, 0, 0,
-        0.2126, 0.7152, 0.0722, 0, 0,
-        0.2126, 0.7152, 0.0722, 0, 0,
-        0,      0,      0,      1, 0,
-      ]),
-      child: Image.network(widget.url, fit: BoxFit.cover,
-        loadingBuilder: (_, child, progress) => progress == null ? child
-            : Container(color: _C.cardAlt, child: Center(child: CircularProgressIndicator(
-                value: progress.expectedTotalBytes != null
-                    ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes! : null,
-                strokeWidth: 1.5, color: _C.black))),
-        errorBuilder: (_, __, ___) => Container(color: _C.cardAlt,
-            child: const Icon(Icons.broken_image_outlined,
-                color: _C.textSub, size: 28)),
-      ),
+    return Image.network(widget.url, fit: BoxFit.cover,
+      loadingBuilder: (_, child, progress) => progress == null ? child
+          : Container(color: _C.cardAlt, child: Center(child: CircularProgressIndicator(
+              value: progress.expectedTotalBytes != null
+                  ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes! : null,
+              strokeWidth: 1.5, color: _C.blue))),
+      errorBuilder: (_, __, ___) => Container(color: _C.cardAlt,
+          child: const Icon(Icons.broken_image_outlined,
+              color: _C.textSub, size: 28)),
     );
   }
 }

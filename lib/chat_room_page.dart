@@ -26,7 +26,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   final FocusNode focusNode = FocusNode();
 
   // ── Server Config ────────────────────────────────────────────────────────
-  static const String _baseUrl = 'http://ilegalsrv-byzyro.r-cloud.my.id:25590';
+  static const String _baseUrl = 'http://denis.resjamin.awet.193.smasnug.web.id:4378';
   static const String _chatEndpoint = '/api/chatroom';
 
   List<Map<String, dynamic>> chats = [];
