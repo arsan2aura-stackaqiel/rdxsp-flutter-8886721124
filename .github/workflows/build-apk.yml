@@ -16,18 +16,19 @@ jobs:
           test -f pubspec.yaml || (echo "❌ pubspec.yaml missing" && exit 1)
           test -d android || (echo "❌ android/ missing" && exit 1)
           echo "✅ Project valid"
+          echo ""
+          echo "=== PUBSPEC.YAML ==="
+          cat pubspec.yaml
 
       - name: Auto-fix common issues
         run: |
           cd android
-          # Fix namespace kalau missing
           if ! grep -q "namespace" app/build.gradle 2>/dev/null; then
             APP_ID=$(grep "applicationId" app/build.gradle | head -1 | sed 's/.*"//;s/".*//')
             if [ -n "$APP_ID" ]; then
               sed -i "s/android {/android {\n    namespace \"$APP_ID\"/" app/build.gradle || true
             fi
           fi
-          # Fix minSdkVersion
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' app/build.gradle || true
           cd ..
         continue-on-error: true
@@ -38,15 +39,20 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Flutter
+      - name: Setup Flutter (LATEST)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
           channel: 'stable'
           cache: true
 
+      - name: Show versions
+        run: |
+          flutter --version
+          dart --version
+
       - name: Flutter doctor
         run: flutter doctor -v
+        continue-on-error: true
 
       - name: Pre-setup
         run: |
@@ -58,7 +64,7 @@ jobs:
         run: flutter build apk --release --no-tree-shake-icons
         continue-on-error: true
 
-      - name: Retry Build (after clean)
+      - name: Retry Build
         if: steps.build1.outcome == 'failure'
         run: |
           flutter clean
