@@ -2,14 +2,23 @@ name: Build Flutter APK
 
 on:
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: false
+        default: 'release'
 
 jobs:
   build:
+    name: Build APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Validate project
         run: |
@@ -17,8 +26,8 @@ jobs:
           test -d android || (echo "❌ android/ missing" && exit 1)
           echo "✅ Project valid"
           echo ""
-          echo "=== PUBSPEC.YAML ==="
-          cat pubspec.yaml
+          echo "=== PUBSPEC.YAML (first 30 lines) ==="
+          head -30 pubspec.yaml
 
       - name: Auto-fix common issues
         run: |
@@ -39,7 +48,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Flutter (LATEST)
+      - name: Setup Flutter (LATEST STABLE)
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -49,56 +58,96 @@ jobs:
         run: |
           flutter --version
           dart --version
+          java -version
 
       - name: Flutter doctor
         run: flutter doctor -v
         continue-on-error: true
 
-      - name: Pre-setup
+      - name: Clean previous build
         run: |
-          flutter clean
-          flutter pub get
+          flutter clean || true
+          rm -rf .dart_tool || true
+          rm -rf build || true
 
-      - name: Build APK
-        id: build1
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Pre-analyze (non-blocking)
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
         continue-on-error: true
 
-      - name: Retry Build
-        if: steps.build1.outcome == 'failure'
+      - name: Build APK Release
+        id: build-release
         run: |
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log
+        continue-on-error: true
+
+      - name: Retry Build (clean)
+        if: steps.build-release.outcome == 'failure'
+        run: |
+          echo "⚠️ Retry after clean..."
           flutter clean
           flutter pub get
-          flutter build apk --release --no-tree-shake-icons
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build-retry.log
         continue-on-error: true
 
       - name: Build Debug (fallback)
         if: failure()
         run: |
+          echo "⚠️ Fallback to debug build..."
           flutter clean
           flutter pub get
-          flutter build apk --debug
+          flutter build apk --debug 2>&1 | tee build-debug.log
+        continue-on-error: true
+
+      - name: Show logs if failed
+        if: failure()
+        run: |
+          echo "=== BUILD.LOG ==="
+          tail -100 build.log 2>/dev/null || true
+          echo ""
+          echo "=== BUILD-RETRY.LOG ==="
+          tail -100 build-retry.log 2>/dev/null || true
+          echo ""
+          echo "=== BUILD-DEBUG.LOG ==="
+          tail -100 build-debug.log 2>/dev/null || true
 
       - name: Find APK
+        id: find-apk
         if: always()
-        id: find
         run: |
-          APK=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
-          echo "path=$APK" >> $GITHUB_OUTPUT
-          echo "APK: $APK"
+          echo "=== SEARCHING FOR APK ==="
+          find . -name "*.apk" -type f 2>/dev/null
+          APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH=$(find . -name "app-debug.apk" -type f 2>/dev/null | head -1)
+          fi
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
+          fi
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found: $APK_PATH"
 
-      - uses: actions/upload-artifact@v4
-        if: steps.find.outputs.path != ''
+      - name: Upload APK Artifact
+        if: steps.find-apk.outputs.apk_path != ''
+        uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: ${{ steps.find.outputs.path }}
+          name: app-release-apk
+          path: ${{ steps.find-apk.outputs.apk_path }}
+          retention-days: 30
 
-      - uses: softprops/action-gh-release@v2
-        if: steps.find.outputs.path != ''
+      - name: Create Release
+        if: steps.find-apk.outputs.apk_path != ''
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          files: ${{ steps.find.outputs.path }}
+          name: "Build #${{ github.run_number }}"
+          files: ${{ steps.find-apk.outputs.apk_path }}
+          generate_release_notes: true
 
       - name: Fail if no APK
-        if: steps.find.outputs.path == ''
-        run: exit 1
+        if: steps.find-apk.outputs.apk_path == ''
+        run: |
+          echo "❌ No APK found. Build failed."
+          exit 1
