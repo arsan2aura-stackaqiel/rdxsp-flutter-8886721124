@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Flutter APK (Auto-Adapt)
 
 on:
   workflow_dispatch:
@@ -12,86 +12,224 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Validate project
+      # ============================================================
+      # STEP 1: DETECT REQUIRED VERSIONS
+      # ============================================================
+      - name: Validate & Detect Requirements
+        id: detect
         run: |
+          echo "=== VALIDATE PROJECT ==="
           test -f pubspec.yaml || (echo "❌ pubspec.yaml missing" && exit 1)
           test -d android || (echo "❌ android/ missing" && exit 1)
           echo "✅ Project valid"
           echo ""
-          echo "=== PUBSPEC.YAML (first 30 lines) ==="
-          head -30 pubspec.yaml
+          echo "=== PUBSPEC.YAML ==="
+          cat pubspec.yaml
+          echo ""
 
-      - name: Auto-fix common issues
+          # Detect Dart SDK version required
+          DART_MIN=$(grep -A 5 "environment:" pubspec.yaml | grep -E "sdk:" | head -1 | sed 's/.*sdk: *//' | sed "s/['\^<>=\*]//g" | sed 's/ .*//')
+          echo "Dart SDK required: $DART_MIN"
+
+          # Map Dart SDK → Flutter version
+          FLUTTER_VERSION="stable"
+          if [ -n "$DART_MIN" ]; then
+            case "$DART_MIN" in
+              3.10.*|3.9.*|3.8.*)  FLUTTER_VERSION="3.35.0" ;;
+              3.7.*)              FLUTTER_VERSION="3.29.0" ;;
+              3.6.*)              FLUTTER_VERSION="3.27.0" ;;
+              3.5.*)              FLUTTER_VERSION="3.24.0" ;;
+              3.4.*)              FLUTTER_VERSION="3.22.0" ;;
+              3.3.*)              FLUTTER_VERSION="3.19.0" ;;
+              3.2.*)              FLUTTER_VERSION="3.16.0" ;;
+              3.1.*)              FLUTTER_VERSION="3.13.0" ;;
+              3.0.*)              FLUTTER_VERSION="3.10.0" ;;
+              *)                  FLUTTER_VERSION="stable" ;;
+            esac
+          fi
+          echo "flutter_version=$FLUTTER_VERSION" >> $GITHUB_OUTPUT
+          echo "Selected Flutter: $FLUTTER_VERSION"
+
+          # Detect Java version from Gradle config
+          JAVA_VERSION="17"
+          if grep -rq "sourceCompatibility.*VERSION_21" android/ 2>/dev/null; then
+            JAVA_VERSION="21"
+          elif grep -rq "sourceCompatibility.*VERSION_17" android/ 2>/dev/null; then
+            JAVA_VERSION="17"
+          elif grep -rq "sourceCompatibility.*VERSION_11" android/ 2>/dev/null; then
+            JAVA_VERSION="11"
+          elif grep -rq "sourceCompatibility.*VERSION_1_8" android/ 2>/dev/null; then
+            JAVA_VERSION="8"
+          fi
+          echo "java_version=$JAVA_VERSION" >> $GITHUB_OUTPUT
+          echo "Selected Java: $JAVA_VERSION"
+
+          # Detect Gradle version needed
+          GRADLE_VERSION="8.2"
+          AGP_VERSION=$(grep -rE "com.android.tools.build:gradle:" android/build.gradle android/app/build.gradle 2>/dev/null | head -1 | sed "s/.*build:gradle://" | sed "s/[']//g")
+          echo "AGP version: $AGP_VERSION"
+
+          if [ -n "$AGP_VERSION" ]; then
+            case "$AGP_VERSION" in
+              8.*) GRADLE_VERSION="8.2" ;;
+              7.*) GRADLE_VERSION="7.6" ;;
+              4.*) GRADLE_VERSION="6.9" ;;
+            esac
+          fi
+          echo "gradle_version=$GRADLE_VERSION" >> $GITHUB_OUTPUT
+          echo "Selected Gradle: $GRADLE_VERSION"
+
+      # ============================================================
+      # STEP 2: AUTO-FIX GRADLE WRAPPER
+      # ============================================================
+      - name: Auto-Fix Gradle Wrapper
         run: |
-          cd android
-          if ! grep -q "namespace" app/build.gradle 2>/dev/null; then
-            APP_ID=$(grep "applicationId" app/build.gradle | head -1 | sed 's/.*"//;s/".*//')
-            if [ -n "$APP_ID" ]; then
-              sed -i "s/android {/android {\n    namespace \"$APP_ID\"/" app/build.gradle || true
+          echo "=== FIXING GRADLE WRAPPER ==="
+          GRADLE_VERSION="${{ steps.detect.outputs.gradle_version }}"
+          WRAPPER_FILE="android/gradle/wrapper/gradle-wrapper.properties"
+
+          if [ -f "$WRAPPER_FILE" ]; then
+            echo "Current:"
+            cat "$WRAPPER_FILE"
+            sed -i "s|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.zip|g" "$WRAPPER_FILE"
+            echo ""
+            echo "Updated:"
+            cat "$WRAPPER_FILE"
+          fi
+
+      # ============================================================
+      # STEP 3: AUTO-FIX GRADLE FILES
+      # ============================================================
+      - name: Auto-Fix Gradle Files
+        run: |
+          echo "=== FIXING GRADLE FILES ==="
+
+          # Fix namespace (Flutter 3.x+)
+          if [ -f "android/app/build.gradle" ]; then
+            if ! grep -q "namespace" android/app/build.gradle; then
+              APP_ID=$(grep "applicationId" android/app/build.gradle | head -1 | sed 's/.*"//;s/".*//')
+              if [ -n "$APP_ID" ]; then
+                sed -i "s/android {/android {\n    namespace \"${APP_ID}\"/" android/app/build.gradle
+                echo "✅ Added namespace: $APP_ID"
+              fi
+            fi
+
+            # Fix minSdkVersion (kalau < 21)
+            if grep -q "minSdkVersion 19" android/app/build.gradle; then
+              sed -i "s/minSdkVersion 19/minSdkVersion 21/g" android/app/build.gradle
+              echo "✅ Upgraded minSdkVersion to 21"
+            fi
+
+            # Fix compileSdkVersion
+            sed -i "s/compileSdkVersion .*/compileSdkVersion 34/" android/app/build.gradle || true
+            echo "✅ Set compileSdkVersion to 34"
+
+            # Fix targetSdkVersion
+            sed -i "s/targetSdkVersion .*/targetSdkVersion 34/" android/app/build.gradle || true
+            echo "✅ Set targetSdkVersion to 34"
+          fi
+
+          # Fix build.gradle (root)
+          if [ -f "android/build.gradle" ]; then
+            # Fix Kotlin version mismatch
+            if grep -q "kotlin_version" android/build.gradle; then
+              sed -i "s/kotlin_version = .*/kotlin_version = '1.9.22'/" android/build.gradle || true
+              echo "✅ Set Kotlin to 1.9.22"
             fi
           fi
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' app/build.gradle || true
-          cd ..
-        continue-on-error: true
 
-      - name: Setup Java 17
+      # ============================================================
+      # STEP 4: SETUP JAVA
+      # ============================================================
+      - name: Setup Java ${{ steps.detect.outputs.java_version }}
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: ${{ steps.detect.outputs.java_version }}
 
-      - name: Setup Flutter (LATEST STABLE)
+      # ============================================================
+      # STEP 5: SETUP FLUTTER (AUTO VERSION)
+      # ============================================================
+      - name: Setup Flutter ${{ steps.detect.outputs.flutter_version }}
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ steps.detect.outputs.flutter_version }}
           channel: 'stable'
           cache: true
 
-      - name: Show versions
+      # ============================================================
+      # STEP 6: SHOW VERSIONS
+      # ============================================================
+      - name: Show Versions
         run: |
+          echo "=== FLUTTER ==="
           flutter --version
+          echo ""
+          echo "=== DART ==="
           dart --version
+          echo ""
+          echo "=== JAVA ==="
           java -version
+          echo ""
+          echo "=== GRADLE ==="
+          cd android && ./gradlew --version 2>/dev/null || gradle --version 2>/dev/null || echo "Gradle via wrapper"
 
-      - name: Flutter doctor
+      # ============================================================
+      # STEP 7: SETUP ANDROID SDK
+      # ============================================================
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 ndk;25.1.8937393'
+
+      # ============================================================
+      # STEP 8: FLUTTER DOCTOR
+      # ============================================================
+      - name: Flutter Doctor
         run: flutter doctor -v
         continue-on-error: true
 
-      - name: Clean previous build
+      # ============================================================
+      # STEP 9: CLEAN & GET DEPENDENCIES
+      # ============================================================
+      - name: Clean & Get Dependencies
         run: |
           flutter clean || true
           rm -rf .dart_tool || true
           rm -rf build || true
+          flutter pub get
 
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Pre-analyze (non-blocking)
-        run: flutter analyze --no-fatal-warnings --no-fatal-infos
-        continue-on-error: true
-
+      # ============================================================
+      # STEP 10: BUILD RELEASE
+      # ============================================================
       - name: Build APK Release
         id: build-release
         run: |
           flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log
         continue-on-error: true
 
-      - name: Retry Build (clean)
+      # ============================================================
+      # STEP 11: RETRY (if failed)
+      # ============================================================
+      - name: Retry Build
         if: steps.build-release.outcome == 'failure'
         run: |
-          echo "⚠️ Retry after clean..."
+          echo "⚠️ Retry with clean build..."
           flutter clean
+          rm -rf android/.gradle
           flutter pub get
           flutter build apk --release --no-tree-shake-icons 2>&1 | tee build-retry.log
         continue-on-error: true
 
+      # ============================================================
+      # STEP 12: DEBUG FALLBACK
+      # ============================================================
       - name: Build Debug (fallback)
         if: failure()
         run: |
@@ -101,34 +239,49 @@ jobs:
           flutter build apk --debug 2>&1 | tee build-debug.log
         continue-on-error: true
 
-      - name: Show logs if failed
+      # ============================================================
+      # STEP 13: SHOW LOGS IF FAILED
+      # ============================================================
+      - name: Show Build Logs
         if: failure()
         run: |
-          echo "=== BUILD.LOG ==="
-          tail -100 build.log 2>/dev/null || true
+          echo "=== BUILD.LOG (last 150 lines) ==="
+          tail -150 build.log 2>/dev/null || true
           echo ""
-          echo "=== BUILD-RETRY.LOG ==="
+          echo "=== BUILD-RETRY.LOG (last 100 lines) ==="
           tail -100 build-retry.log 2>/dev/null || true
           echo ""
-          echo "=== BUILD-DEBUG.LOG ==="
+          echo "=== BUILD-DEBUG.LOG (last 100 lines) ==="
           tail -100 build-debug.log 2>/dev/null || true
 
+      # ============================================================
+      # STEP 14: FIND APK
+      # ============================================================
       - name: Find APK
         id: find-apk
         if: always()
         run: |
           echo "=== SEARCHING FOR APK ==="
           find . -name "*.apk" -type f 2>/dev/null
-          APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
-          if [ -z "$APK_PATH" ]; then
-            APK_PATH=$(find . -name "app-debug.apk" -type f 2>/dev/null | head -1)
-          fi
+
+          APK_PATH=""
+          for candidate in             "build/app/outputs/flutter-apk/app-release.apk"             "build/app/outputs/flutter-apk/app-debug.apk"             "build/app/outputs/apk/release/app-release.apk"             "build/app/outputs/apk/debug/app-debug.apk"             "build/app/outputs/apk/app-release.apk"; do
+            if [ -f "$candidate" ]; then
+              APK_PATH="$candidate"
+              break
+            fi
+          done
+
           if [ -z "$APK_PATH" ]; then
             APK_PATH=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
           fi
+
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found: $APK_PATH"
 
+      # ============================================================
+      # STEP 15: UPLOAD ARTIFACT
+      # ============================================================
       - name: Upload APK Artifact
         if: steps.find-apk.outputs.apk_path != ''
         uses: actions/upload-artifact@v4
@@ -137,6 +290,9 @@ jobs:
           path: ${{ steps.find-apk.outputs.apk_path }}
           retention-days: 30
 
+      # ============================================================
+      # STEP 16: CREATE RELEASE
+      # ============================================================
       - name: Create Release
         if: steps.find-apk.outputs.apk_path != ''
         uses: softprops/action-gh-release@v2
@@ -146,6 +302,9 @@ jobs:
           files: ${{ steps.find-apk.outputs.apk_path }}
           generate_release_notes: true
 
+      # ============================================================
+      # STEP 17: FAIL IF NO APK
+      # ============================================================
       - name: Fail if no APK
         if: steps.find-apk.outputs.apk_path == ''
         run: |
