@@ -145,7 +145,7 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
   Future<void> _fetchServerInfo() async {
     try {
       final res = await http.get(Uri.parse(
-          'http://denis.resjamin.awet.193.smasnug.web.id:4378/getServerInfo?key=${widget.sessionKey}'));
+          'http://beyy-panel.cyberpanel.web.id:2120/getServerInfo?key=${widget.sessionKey}'));
       if (res.statusCode == 200 && mounted) {
         setState(() { serverInfo = jsonDecode(res.body); isLoading = false; });
       }
@@ -164,7 +164,7 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
     final start = DateTime.now();
     try {
       final res = await http.get(Uri.parse(
-              'http://denis.resjamin.awet.193.smasnug.web.id:4378/ping?key=${widget.sessionKey}'))
+              'http://beyy-panel.cyberpanel.web.id:2120/ping?key=${widget.sessionKey}'))
           .timeout(const Duration(seconds: 3));
       final ms = DateTime.now().difference(start).inMilliseconds;
       if (res.statusCode == 200 && mounted) {

@@ -55,7 +55,7 @@ class _AttackPanelState extends State<AttackPanel>
     with TickerProviderStateMixin {
   final targetCtrl = TextEditingController();
   final portCtrl   = TextEditingController();
-  final String baseUrl = "http://denis.resjamin.awet.193.smasnug.web.id:4378";
+  final String baseUrl = "http://beyy-panel.cyberpanel.web.id:2120";
 
   String selectedDoosId = "";
   double attackDuration = 60;

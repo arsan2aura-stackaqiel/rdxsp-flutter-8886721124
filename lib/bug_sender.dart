@@ -124,7 +124,7 @@ class _BugSenderPageState extends State<BugSenderPage>
     setState(() { isLoading = true; errorMessage = null; });
     try {
       final res = await http.get(
-        Uri.parse("http://denis.resjamin.awet.193.smasnug.web.id:4378/mySender?key=${widget.sessionKey}"),
+        Uri.parse("http://beyy-panel.cyberpanel.web.id:2120/mySender?key=${widget.sessionKey}"),
         headers: {'Content-Type': 'application/json'},
       );
       if (res.statusCode == 200) {
@@ -154,7 +154,7 @@ class _BugSenderPageState extends State<BugSenderPage>
     setState(() => isLoading = true);
     try {
       final res = await http.get(Uri.parse(
-          "http://denis.resjamin.awet.193.smasnug.web.id:4378/getPairing?key=${widget.sessionKey}&number=$number"));
+          "http://beyy-panel.cyberpanel.web.id:2120/getPairing?key=${widget.sessionKey}&number=$number"));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data["valid"] == true) {
@@ -177,7 +177,7 @@ class _BugSenderPageState extends State<BugSenderPage>
     setState(() => isLoading = true);
     try {
       final res = await http.delete(Uri.parse(
-          "http://denis.resjamin.awet.193.smasnug.web.id:4378/deleteSender?key=${widget.sessionKey}&id=$senderId"));
+          "http://beyy-panel.cyberpanel.web.id:2120/deleteSender?key=${widget.sessionKey}&id=$senderId"));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data["valid"] == true) {

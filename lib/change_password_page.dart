@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const String baseUrl = "http://denis.resjamin.awet.193.smasnug.web.id:4378";
+const String baseUrl = "http://beyy-panel.cyberpanel.web.id:2120";
 
 // ─── Palette: Biru Modern (sama dengan LoginPage) ─────────────────────────
 class _C {

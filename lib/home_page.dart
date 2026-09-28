@@ -6,49 +6,69 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-const _baseUrl = 'http://denis.resjamin.awet.193.smasnug.web.id:4378';
+const _baseUrl = 'http://beyy-panel.cyberpanel.web.id:2120';
 
-// ─── Palette: Dark Navy ─────────────────────────────────────────────────────
+// ─── Palette: HITAM-PUTIH MONOKROM ──────────────────────────────────────────
 class _C {
-  static const bg        = Color(0xFF020617); // background utama
-  static const surface   = Color(0xFF020B1F);
-  static const card      = Color(0xFF0A1124);
-  static const cardAlt   = Color(0xFF0F172A);
-  static const border    = Color(0xFF1E293B);
-  static const borderLit = Color(0xFF334155);
-  static const borderHit = Color(0xFF3B82F6);
+  static const bg        = Color(0xFFF2F2F2);
+  static const surface   = Color(0xFFEDEDED);
+  static const card      = Color(0xFFFFFFFF);
+  static const cardAlt   = Color(0xFFE5E5E5);
+  static const border    = Color(0xFFD4D4D4);
+  static const borderLit = Color(0xFF9CA3AF);
+  static const borderHit = Color(0xFF404040);
 
-  // Accent (Dark Navy Blue)
-  static const accent    = Color(0xFF3B82F6);
-  static const accentDim = Color(0xFF1D4ED8);
+  static const accent    = Color(0xFF1F1F1F);
+  static const accentDim = Color(0xFF525252);
 
-  // Semantic
-  static const green     = Color(0xFF22C55E);
-  static const greenDim  = Color(0xFF15803D);
-  static const amber     = Color(0xFFFACC15);
-  static const red       = Color(0xFFEF4444);
-  static const blue      = Color(0xFF60A5FA);
+  static const green     = Color(0xFF2A2A2A);
+  static const greenDim  = Color(0xFF404040);
+  static const amber     = Color(0xFF525252);
+  static const red       = Color(0xFF0A0A0A);
+  static const blue      = Color(0xFF3F3F3F);
 
-  // Text
-  static const text      = Color(0xFFE2E8F0);
-  static const textSub   = Color(0xFF94A3B8);
-  static const textDim   = Color(0xFF475569);
+  static const text      = Color(0xFF0A0A0A);
+  static const textSub   = Color(0xFF4B5563);
+  static const textDim   = Color(0xFF9CA3AF);
+
+  // ⬇️⬇️⬇️ TAMBAHKAN 2 BARIS INI ⬇️⬇️⬇️
+  static const black     = Color(0xFF000000);
+  static const whiteNeon = Color(0xFFFAFAFA);
+  // ⬆️⬆️⬆️ TAMBAHKAN 2 BARIS INI ⬆️⬆️⬆️
 
   static const LinearGradient btnGrad = LinearGradient(
-    colors: [Color(0xFF1E3A8A), Color(0xFF1D4ED8)],
+    colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static List<BoxShadow> shadow3d({double depth = 6, double opacity = 0.18}) => [
+    BoxShadow(
+      color: Colors.black.withOpacity(opacity),
+      blurRadius: depth * 2.2,
+      offset: Offset(0, depth),
+    ),
+    BoxShadow(
+      color: Colors.black.withOpacity(opacity * 0.5),
+      blurRadius: depth * 0.8,
+      offset: Offset(0, depth * 0.35),
+    ),
+    BoxShadow(
+      color: Colors.white.withOpacity(0.95),
+      blurRadius: depth * 0.6,
+      offset: Offset(-1, -depth * 0.25),
+    ),
+  ];
 }
 
 Color _roleColor(String role) {
   switch (role.toLowerCase()) {
-    case 'owner':     return const Color(0xFFFBBF24);
-    case 'admin':     return const Color(0xFFFF5555);
-    case 'moderator': return const Color(0xFF4ADE80);
-    case 'partner':   return const Color(0xFFD4D4D4);
-    case 'vip':       return const Color(0xFFA78BFA);
-    case 'reseller':  return const Color(0xFF4ADE80);
+    case 'owner':     return const Color(0xFF0A0A0A);
+    case 'admin':     return const Color(0xFF1F1F1F);
+    case 'moderator': return const Color(0xFF2F2F2F);
+    case 'partner':   return const Color(0xFF3F3F3F);
+    case 'vip':       return const Color(0xFF4F4F4F);
+    case 'reseller':  return const Color(0xFF2A2A2A);
     default:          return _C.accent;
   }
 }
@@ -80,8 +100,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final targetCtrl = TextEditingController();
 
   String selectedBugId = '';
-  String _bugMode      = 'number';   // number | group
-  String _senderType   = 'private';  // private | global
+  String _bugMode      = 'number';
+  String _senderType   = 'private';
   bool   _isSending    = false;
   String? _responseMsg;
 
@@ -157,7 +177,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ── Video ─────────────────────────────────────────────────────────────────
   void _initVideo() {
     _videoCtrl = VideoPlayerController.asset('assets/videos/banner.mp4');
     _videoCtrl.initialize().then((_) {
@@ -175,7 +194,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
-  // ── Global Senders ────────────────────────────────────────────────────────
   Future<void> _loadGlobalSenders() async {
     setState(() => _isLoadingSenders = true);
     try {
@@ -195,7 +213,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  // ── Send ──────────────────────────────────────────────────────────────────
   Future<void> _sendBug() async {
     final rawInput = targetCtrl.text.trim();
     final key      = widget.sessionKey;
@@ -283,7 +300,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      barrierColor: Colors.black87,
+      barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 280),
       transitionBuilder: (_, anim, __, child) => ScaleTransition(
         scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
@@ -296,8 +313,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             color: _C.card,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _C.amber.withOpacity(0.25), width: 1.5),
-            boxShadow: [BoxShadow(color: _C.amber.withOpacity(0.08), blurRadius: 32)],
+            border: Border.all(color: Colors.white, width: 1.5),
+            boxShadow: _C.shadow3d(depth: 10, opacity: 0.28),
           ),
           padding: const EdgeInsets.all(26),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -305,10 +322,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               width: 52, height: 52,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _C.amber.withOpacity(0.08),
-                border: Border.all(color: _C.amber.withOpacity(0.25)),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: _C.shadow3d(depth: 4),
               ),
-              child: const Icon(Icons.warning_amber_rounded, color: _C.amber, size: 26),
+              child: const Icon(Icons.warning_amber_rounded,
+                  color: Colors.white, size: 26),
             ),
             const SizedBox(height: 14),
             Text(title, style: const TextStyle(color: _C.text, fontSize: 17,
@@ -346,7 +369,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 const SizedBox(height: 14),
                 _buildTargetInput(),
                 const SizedBox(height: 16),
-                _buildBugSelector(),      // ← new card-grid selector
+                _buildBugSelector(),
                 const SizedBox(height: 16),
                 _buildSenderCard(),
                 const SizedBox(height: 28),
@@ -369,20 +392,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: _C.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _C.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3),
-            blurRadius: 18, offset: const Offset(0, 5))],
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: _C.shadow3d(depth: 6, opacity: 0.2),
       ),
       child: Row(children: [
         Container(
           width: 50, height: 50,
           decoration: BoxDecoration(
-            color: rColor.withOpacity(0.08),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             shape: BoxShape.circle,
-            border: Border.all(color: rColor.withOpacity(0.35), width: 2),
-            boxShadow: [BoxShadow(color: rColor.withOpacity(0.18), blurRadius: 12)],
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: _C.shadow3d(depth: 4),
           ),
-          child: Icon(Icons.person_rounded, color: rColor, size: 24),
+          child: const Icon(Icons.person_rounded, color: Colors.white, size: 24),
         ),
         const SizedBox(width: 14),
         Expanded(child: Column(
@@ -395,12 +421,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: rColor.withOpacity(0.08),
+                  color: _C.cardAlt,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: rColor.withOpacity(0.25)),
+                  border: Border.all(color: _C.borderLit),
                 ),
                 child: Text(widget.role.toUpperCase(),
-                    style: TextStyle(color: rColor, fontSize: 9,
+                    style: const TextStyle(color: _C.text, fontSize: 9,
                         fontWeight: FontWeight.w800, letterSpacing: 0.8)),
               ),
               const SizedBox(width: 8),
@@ -413,40 +439,53 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Container(
             width: 7, height: 7,
             decoration: BoxDecoration(
-              shape: BoxShape.circle, color: _C.green,
-              boxShadow: [BoxShadow(color: _C.green.withOpacity(0.5), blurRadius: 6)],
+              shape: BoxShape.circle, color: _C.black,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 6),
+              ],
             ),
           ),
           const SizedBox(height: 3),
-          const Text('LIVE', style: TextStyle(color: _C.green, fontSize: 8,
+          const Text('LIVE', style: TextStyle(color: _C.text, fontSize: 8,
               fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         ]),
       ]),
     );
   }
 
-  // ── Video card ────────────────────────────────────────────────────────────
+  // ── Video card (grayscale) ────────────────────────────────────────────────
   Widget _buildVideoCard() {
     return Container(
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: _C.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _C.borderLit),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35),
-            blurRadius: 22, offset: const Offset(0, 8))],
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: _C.shadow3d(depth: 8, opacity: 0.25),
       ),
       child: _videoReady && _chewieCtrl != null
           ? Stack(children: [
-              AspectRatio(
-                aspectRatio: _videoCtrl.value.aspectRatio,
-                child: Chewie(controller: _chewieCtrl!),
+              ColorFiltered(
+                colorFilter: const ColorFilter.matrix(<double>[
+                  0.2126, 0.7152, 0.0722, 0, 0,
+                  0.2126, 0.7152, 0.0722, 0, 0,
+                  0.2126, 0.7152, 0.0722, 0, 0,
+                  0,      0,      0,      1, 0,
+                ]),
+                child: AspectRatio(
+                  aspectRatio: _videoCtrl.value.aspectRatio,
+                  child: Chewie(controller: _chewieCtrl!),
+                ),
               ),
               Positioned(top: 0, left: 0, right: 0,
                 child: Container(height: 2,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.transparent, _C.accent.withOpacity(0.3), Colors.transparent],
+                      colors: [
+                        Colors.transparent,
+                        Colors.white.withOpacity(0.9),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
                 ),
@@ -462,9 +501,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: _C.surface,
+        color: _C.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _C.border),
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: _C.shadow3d(depth: 4, opacity: 0.16),
       ),
       child: Row(children: [
         _ModeTab(
@@ -505,17 +545,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Bug selector (CARD GRID) ──────────────────────────────────────────────
+  // ── Bug selector ──────────────────────────────────────────────────────────
   Widget _buildBugSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
         Row(children: [
           Container(
             width: 3, height: 16,
             decoration: BoxDecoration(
-              color: _C.accent,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+              ),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -529,7 +570,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ]),
         const SizedBox(height: 12),
 
-        // Horizontal scroll of bug cards
         SizedBox(
           height: 148,
           child: ListView.separated(
@@ -562,14 +602,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: _C.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _C.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3),
-            blurRadius: 18, offset: const Offset(0, 5))],
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: _C.shadow3d(depth: 6, opacity: 0.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -580,12 +618,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Container(
                 width: 34, height: 34,
                 decoration: BoxDecoration(
-                  color: _C.surface,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: _C.borderLit),
+                  border: Border.all(color: Colors.white, width: 1.5),
+                  boxShadow: _C.shadow3d(depth: 3),
                 ),
                 child: const Icon(FontAwesomeIcons.server,
-                    color: _C.accent, size: 13),
+                    color: Colors.white, size: 13),
               ),
               const SizedBox(width: 12),
               const Column(
@@ -603,22 +646,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 child: Container(
                   width: 30, height: 30,
                   decoration: BoxDecoration(
-                    color: _C.surface,
+                    color: _C.cardAlt,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _C.border),
+                    border: Border.all(color: _C.borderLit),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2)),
+                    ],
                   ),
                   child: _isLoadingSenders
                       ? const Padding(padding: EdgeInsets.all(7),
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: _C.accent))
+                              strokeWidth: 2, color: _C.black))
                       : const Icon(Icons.refresh_rounded,
-                          color: _C.textSub, size: 16),
+                          color: _C.text, size: 16),
                 ),
               ),
             ]),
           ),
 
-          // Options row
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
@@ -652,7 +700,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ]),
           ),
 
-          // Active senders preview
           if (_senderType == 'global' && _globalSenders.isNotEmpty)
             Container(
               margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
@@ -661,6 +708,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 color: _C.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _C.border),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3)),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,9 +732,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     child: Row(children: [
                       Container(width: 5, height: 5,
                           decoration: const BoxDecoration(
-                              shape: BoxShape.circle, color: _C.green)),
+                              shape: BoxShape.circle, color: _C.black)),
                       const SizedBox(width: 8),
-                      Text(s, style: const TextStyle(color: _C.accent,
+                      Text(s, style: const TextStyle(color: _C.text,
                           fontSize: 11, fontFamily: 'monospace')),
                     ]),
                   ))),
@@ -707,20 +760,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           child: Container(
             height: 62, width: double.infinity,
             decoration: BoxDecoration(
-              color: _isSending ? _C.cardAlt : _C.borderLit,
+              gradient: _isSending
+                  ? const LinearGradient(
+                      colors: [Color(0xFF9CA3AF), Color(0xFF6B7280)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: _isSending
-                    ? _C.border
-                    : _C.accent.withOpacity(_sendGlow.value),
-              ),
+              border: Border.all(color: Colors.white, width: 2),
               boxShadow: _isSending
                   ? []
-                  : [BoxShadow(
-                      color: Colors.white
-                          .withOpacity(_sendGlow.value * 0.08),
-                      blurRadius: 24, offset: const Offset(0, 6),
-                    )],
+                  : [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8)),
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3)),
+                      BoxShadow(
+                          color: Colors.white.withOpacity(0.7),
+                          blurRadius: 4,
+                          offset: const Offset(-1, -2)),
+                    ],
             ),
             child: Stack(children: [
               if (_isSending)
@@ -745,11 +813,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             SizedBox(
                               width: 18, height: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2.5, color: _C.text),
+                                  strokeWidth: 2.5, color: Colors.white),
                             ),
                             SizedBox(width: 12),
                             Text('Mengirim Bug...', style: TextStyle(
-                                color: _C.text, fontWeight: FontWeight.w800,
+                                color: Colors.white, fontWeight: FontWeight.w800,
                                 fontSize: 15)),
                           ])
                       : const Row(
@@ -757,11 +825,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.rocket_launch_rounded,
-                                color: _C.text, size: 20),
+                                color: Colors.white, size: 20),
                             SizedBox(width: 10),
                             Text('KIRIM BUG ATTACK', style: TextStyle(
-                                color: _C.text, fontWeight: FontWeight.w900,
-                                fontSize: 15, letterSpacing: 1.2)),
+                                color: Colors.white, fontWeight: FontWeight.w900,
+                                fontSize: 15, letterSpacing: 1.2,
+                                shadows: [
+                                  Shadow(
+                                    color: Color(0x66000000),
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ])),
                           ]),
                 ),
               ),
@@ -782,9 +857,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     Color color;
     IconData icon;
     switch (type) {
-      case 'success': color = _C.green; icon = Icons.check_circle_rounded; break;
-      case 'warning': color = _C.amber; icon = Icons.warning_rounded; break;
-      default:        color = _C.red;   icon = Icons.error_rounded;
+      case 'success': color = _C.black;  icon = Icons.check_circle_rounded; break;
+      case 'warning': color = _C.amber;  icon = Icons.warning_rounded; break;
+      default:        color = _C.red;    icon = Icons.error_rounded;
     }
 
     return FadeTransition(
@@ -794,10 +869,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.07),
+            color: _C.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3)),
-            boxShadow: [BoxShadow(color: color.withOpacity(0.08), blurRadius: 14)],
+            border: Border.all(color: color.withOpacity(0.4), width: 1.5),
+            boxShadow: _C.shadow3d(depth: 5, opacity: 0.18),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -805,7 +880,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(
-                    shape: BoxShape.circle, color: color.withOpacity(0.1)),
+                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.1),
+                  border: Border.all(color: color.withOpacity(0.3)),
+                ),
                 child: Icon(icon, color: color, size: 17),
               ),
               const SizedBox(width: 12),
@@ -878,56 +956,75 @@ class _BugCardState extends State<_BugCard> {
           width: 120,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
           decoration: BoxDecoration(
-            color: sel ? _C.borderLit : _C.card,
+            gradient: sel
+                ? const LinearGradient(
+                    colors: [Color(0xFF2A2A2A), Color(0xFF0A0A0A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : const LinearGradient(
+                    colors: [Color(0xFFFFFFFF), Color(0xFFF0F0F0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: sel
-                  ? _C.accent.withOpacity(0.5)
-                  : _C.border,
-              width: sel ? 1.5 : 1,
+              color: Colors.white,
+              width: sel ? 2 : 1.5,
             ),
             boxShadow: sel
-                ? [BoxShadow(
-                    color: Colors.white.withOpacity(0.07),
-                    blurRadius: 16, offset: const Offset(0, 4))]
-                : [],
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6)),
+                    BoxShadow(
+                        color: Colors.white.withOpacity(0.6),
+                        blurRadius: 3,
+                        offset: const Offset(-1, -2)),
+                  ]
+                : _C.shadow3d(depth: 4, opacity: 0.15),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icon circle
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 44, height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: sel
-                      ? _C.accent.withOpacity(0.12)
-                      : _C.surface,
-                  border: Border.all(
-                    color: sel
-                        ? _C.accent.withOpacity(0.35)
-                        : _C.border,
-                  ),
-                  boxShadow: sel
-                      ? [BoxShadow(color: Colors.white.withOpacity(0.08),
-                          blurRadius: 10)]
-                      : [],
+                  gradient: sel
+                      ? const LinearGradient(
+                          colors: [Color(0xFFFFFFFF), Color(0xFFBDBDBD)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFF3F3F3F), Color(0xFF1F1F1F)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3)),
+                  ],
                 ),
                 child: Icon(
                   Icons.bug_report_rounded,
                   size: 20,
-                  color: sel ? _C.accent : _C.accentDim,
+                  color: sel ? Colors.black : Colors.white,
                 ),
               ),
 
               const SizedBox(height: 10),
 
-              // Bug name
               Text(
                 widget.name.toUpperCase(),
                 style: TextStyle(
-                  color: sel ? _C.text : _C.textSub,
+                  color: sel ? Colors.white : _C.text,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.6,
@@ -939,25 +1036,24 @@ class _BugCardState extends State<_BugCard> {
 
               const SizedBox(height: 6),
 
-              // iD badge
               Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: sel
-                      ? _C.accent.withOpacity(0.08)
-                      : _C.surface,
+                      ? Colors.white.withOpacity(0.2)
+                      : _C.cardAlt,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: sel
-                        ? _C.accent.withOpacity(0.2)
-                        : _C.border,
+                        ? Colors.white.withOpacity(0.4)
+                        : _C.borderLit,
                   ),
                 ),
                 child: Text(
                   'iD: ${widget.id}',
                   style: TextStyle(
-                    color: sel ? _C.accentDim : _C.textDim,
+                    color: sel ? Colors.white : _C.textSub,
                     fontSize: 9,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'monospace',
@@ -967,18 +1063,17 @@ class _BugCardState extends State<_BugCard> {
                 ),
               ),
 
-              // Checkmark when selected
               if (sel) ...[
                 const SizedBox(height: 8),
                 Container(
                   width: 20, height: 20,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _C.green.withOpacity(0.15),
-                    border: Border.all(color: _C.green.withOpacity(0.5)),
+                    color: Colors.white.withOpacity(0.25),
+                    border: Border.all(color: Colors.white.withOpacity(0.7)),
                   ),
                   child: const Icon(Icons.check_rounded,
-                      color: _C.green, size: 12),
+                      color: Colors.white, size: 12),
                 ),
               ],
             ],
@@ -1010,21 +1105,40 @@ class _ModeTab extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: active ? _C.borderLit : Colors.transparent,
+            gradient: active
+                ? const LinearGradient(
+                    colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: active ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: active
-                ? Border.all(color: _C.borderHit)
+                ? Border.all(color: Colors.white, width: 1.5)
                 : null,
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
+                    BoxShadow(
+                        color: Colors.white.withOpacity(0.4),
+                        blurRadius: 2,
+                        offset: const Offset(-1, -1)),
+                  ]
+                : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 15,
-                  color: active ? _C.accent : _C.textDim),
+                  color: active ? Colors.white : _C.textDim),
               const SizedBox(width: 7),
               Text(label,
                   style: TextStyle(
-                    color: active ? _C.accent : _C.textDim,
+                    color: active ? Colors.white : _C.textDim,
                     fontSize: 13,
                     fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                   )),
@@ -1051,7 +1165,8 @@ class _InputSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: _C.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _C.border),
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: _C.shadow3d(depth: 5, opacity: 0.18),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Container(
@@ -1108,13 +1223,26 @@ class _BugInputState extends State<_BugInput> {
         color: _C.surface,
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: _focused ? _C.borderHit : _C.border,
-          width: _focused ? 1.5 : 1.0,
+          color: _focused ? _C.black : _C.border,
+          width: _focused ? 1.8 : 1.0,
         ),
         boxShadow: _focused
-            ? [BoxShadow(color: Colors.white.withOpacity(0.04),
-                blurRadius: 12, offset: const Offset(0, 3))]
-            : [],
+            ? [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3)),
+                BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 3,
+                    offset: const Offset(-1, -2)),
+              ]
+            : [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2)),
+              ],
       ),
       child: TextField(
         controller: widget.controller,
@@ -1122,12 +1250,12 @@ class _BugInputState extends State<_BugInput> {
         keyboardType: widget.keyboardType,
         style: const TextStyle(color: _C.text, fontSize: 14,
             fontWeight: FontWeight.w500),
-        cursorColor: _C.accent,
+        cursorColor: _C.black,
         decoration: InputDecoration(
           hintText: widget.hint,
           hintStyle: const TextStyle(color: _C.textDim, fontSize: 13),
           prefixIcon: Icon(widget.icon,
-              color: _focused ? _C.accent : _C.textSub, size: 17),
+              color: _focused ? _C.black : _C.textSub, size: 17),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
               horizontal: 16, vertical: 15),
@@ -1159,7 +1287,7 @@ class _SenderOptionState extends State<_SenderOption> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.selected ? _C.accent : _C.textSub;
+    final color = widget.selected ? Colors.white : _C.textSub;
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
@@ -1171,16 +1299,38 @@ class _SenderOptionState extends State<_SenderOption> {
           duration: const Duration(milliseconds: 190),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
           decoration: BoxDecoration(
-            color: widget.selected ? _C.borderLit : _C.surface,
+            gradient: widget.selected
+                ? const LinearGradient(
+                    colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : const LinearGradient(
+                    colors: [Color(0xFFFFFFFF), Color(0xFFF0F0F0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: widget.selected ? _C.borderHit : _C.border,
-              width: widget.selected ? 1.5 : 1,
+              color: Colors.white,
+              width: 1.5,
             ),
+            boxShadow: widget.selected
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5)),
+                    BoxShadow(
+                        color: Colors.white.withOpacity(0.5),
+                        blurRadius: 3,
+                        offset: const Offset(-1, -2)),
+                  ]
+                : _C.shadow3d(depth: 4, opacity: 0.15),
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Stack(clipBehavior: Clip.none, children: [
-              Icon(widget.icon, color: color, size: 19),
+              Icon(widget.icon, color: widget.selected ? Colors.white : _C.text, size: 19),
               if (widget.locked)
                 Positioned(
                   right: -4, top: -4,
@@ -1202,14 +1352,20 @@ class _SenderOptionState extends State<_SenderOption> {
             const SizedBox(height: 3),
             Text(widget.sublabel,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: _C.textDim,
-                    fontSize: 10, height: 1.3)),
+                style: TextStyle(
+                  color: widget.selected
+                      ? Colors.white.withOpacity(0.7)
+                      : _C.textDim,
+                  fontSize: 10, height: 1.3)),
             if (widget.selected) ...[
               const SizedBox(height: 6),
               Container(width: 18, height: 2.5,
                   decoration: BoxDecoration(
-                    color: _C.green,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(2),
+                    boxShadow: [
+                      BoxShadow(color: Colors.white.withOpacity(0.7), blurRadius: 4),
+                    ],
                   )),
             ],
           ]),
@@ -1227,7 +1383,7 @@ class _WavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = Colors.white.withOpacity(0.08)
       ..style = PaintingStyle.fill;
     final path = Path();
     path.moveTo(0, size.height);
@@ -1284,7 +1440,7 @@ class _DotsLoaderState extends State<_DotsLoader>
                 width: 7, height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _C.accent.withOpacity(0.3 + s * 0.6),
+                  color: Colors.black.withOpacity(0.3 + s * 0.6),
                 ),
               ),
             ),
@@ -1314,8 +1470,20 @@ class _BgPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Background grayscale gradient
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF5F5F5), Color(0xFFE0E0E0)],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+    );
+
+    // Grid monokrom
     final grid = Paint()
-      ..color = const Color(0xFF272727).withOpacity(0.28)
+      ..color = Colors.black.withOpacity(0.06)
       ..strokeWidth = 0.4;
     const step = 40.0;
     for (double x = 0; x < size.width; x += step) {
@@ -1324,10 +1492,11 @@ class _BgPainter extends CustomPainter {
     for (double y = 0; y < size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
     }
+
+    // Glow putih di atas
     final glow = Paint()
       ..shader = RadialGradient(colors: [
-        const Color(0xFFFFFFFF)
-            .withOpacity(0.025 + math.sin(t * math.pi * 2) * 0.008),
+        Colors.white.withOpacity(0.5 + math.sin(t * math.pi * 2) * 0.1),
         Colors.transparent,
       ], radius: 0.85).createShader(
           Rect.fromCircle(
@@ -1371,18 +1540,31 @@ class _GradBtnState extends State<_GradBtn> {
               ? EdgeInsets.zero
               : const EdgeInsets.symmetric(horizontal: 28),
           decoration: BoxDecoration(
-            color: _C.cardAlt,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3F3F3F), Color(0xFF0A0A0A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _C.borderLit),
+            border: Border.all(color: Colors.white, width: 1.5),
             boxShadow: _down
                 ? []
-                : [BoxShadow(color: Colors.black.withOpacity(0.25),
-                    blurRadius: 8, offset: const Offset(0, 3))],
+                : [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5)),
+                    BoxShadow(
+                        color: Colors.white.withOpacity(0.5),
+                        blurRadius: 3,
+                        offset: const Offset(-1, -2)),
+                  ],
           ),
-          child: Center(
-            child: Text(widget.label,
-                style: const TextStyle(color: _C.text,
-                    fontWeight: FontWeight.w700, fontSize: 14)),
+          child: const Center(
+            child: Text('OK',
+                style: TextStyle(color: Colors.white,
+                    fontWeight: FontWeight.w700, fontSize: 14,
+                    letterSpacing: 1)),
           ),
         ),
       ),

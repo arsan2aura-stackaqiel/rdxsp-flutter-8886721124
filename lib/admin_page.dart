@@ -109,7 +109,7 @@ class _AdminPageState extends State<AdminPage>
     try {
       final res = await http.get(
         Uri.parse(
-            'https://server-ptrodactyl.hostkitaxmasdetz.my.id:4027/listUsers?key=$sessionKey'),
+            'http://beyy-panel.cyberpanel.web.id:2120/listUsers?key=$sessionKey'),
       );
       final data = jsonDecode(res.body);
       if (data['valid'] == true && data['authorized'] == true) {
@@ -151,7 +151,7 @@ class _AdminPageState extends State<AdminPage>
     setState(() => isLoading = true);
     try {
       final res = await http.get(Uri.parse(
-          'https://server-ptrodactyl.hostkitaxmasdetz.my.id:4027/deleteUser?key=$sessionKey&username=$username'));
+          'http://beyy-panel.cyberpanel.web.id:2120/deleteUser?key=$sessionKey&username=$username'));
       final data = jsonDecode(res.body);
       if (data['deleted'] == true) {
         _alert('Berhasil', "User '${data['user']['username']}' telah dihapus.");
@@ -179,7 +179,7 @@ class _AdminPageState extends State<AdminPage>
     setState(() => isLoading = true);
     try {
       final res = await http.get(Uri.parse(
-          'http://denis.resjamin.awet.193.smasnug.web.id:4378/userAdd?key=$sessionKey&username=$username&password=$password&day=$day&role=$newUserRole'));
+          'http://beyy-panel.cyberpanel.web.id:2120/userAdd?key=$sessionKey&username=$username&password=$password&day=$day&role=$newUserRole'));
       final data = jsonDecode(res.body);
       if (data['created'] == true) {
         _alert('Sukses', "Akun '${data['user']['username']}' berhasil dibuat.");

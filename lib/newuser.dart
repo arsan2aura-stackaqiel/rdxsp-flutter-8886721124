@@ -72,7 +72,7 @@ class _NewUserPageState extends State<NewUserPage> {
 
     try {
       _channel = WebSocketChannel.connect(
-        Uri.parse('http://denis.resjamin.awet.193.smasnug.web.id:4378'),
+        Uri.parse('http://beyy-panel.cyberpanel.web.id:2120'),
       );
 
       _channel!.sink.add(jsonEncode({

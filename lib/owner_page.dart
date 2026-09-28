@@ -58,7 +58,7 @@ class _OwnerPageState extends State<OwnerPage> {
     setState(() => isLoading = true);
     try {
       final res = await http.get(
-        Uri.parse('http://project.nexacloud.biz.id:4176/listUsers?key=$sessionKey'),
+        Uri.parse('http://beyy-panel.cyberpanel.web.id:2120/listUsers?key=$sessionKey'),
       );
       final data = jsonDecode(res.body);
       if (data['valid'] == true && data['authorized'] == true) {
@@ -103,7 +103,7 @@ class _OwnerPageState extends State<OwnerPage> {
     setState(() => isLoading = true);
     try {
       final res = await http.get(
-        Uri.parse('http://project.nexacloud.biz.id:4176/deleteUser?key=$sessionKey&username=$username'),
+        Uri.parse('http://beyy-panel.cyberpanel.web.id:2120/deleteUser?key=$sessionKey&username=$username'),
       );
       final data = jsonDecode(res.body);
 
@@ -133,7 +133,7 @@ class _OwnerPageState extends State<OwnerPage> {
     setState(() => isLoading = true);
     try {
       final url = Uri.parse(
-        'http://project.nexacloud.biz.id:4176/userAdd?key=$sessionKey&username=$u&password=$p&day=$d&role=$newUserRole',
+        'http://beyy-panel.cyberpanel.web.id:2120/userAdd?key=$sessionKey&username=$u&password=$p&day=$d&role=$newUserRole',
       );
       final res = await http.get(url);
       final data = jsonDecode(res.body);
@@ -166,7 +166,7 @@ class _OwnerPageState extends State<OwnerPage> {
     setState(() => isLoading = true);
     try {
       final url = Uri.parse(
-        'http://project.nexacloud.biz.id:4176/editUser?key=$sessionKey&username=$u&addDays=$d',
+        'http://beyy-panel.cyberpanel.web.id:2120/editUser?key=$sessionKey&username=$u&addDays=$d',
       );
       final res = await http.get(url);
       final data = jsonDecode(res.body);
