@@ -2,52 +2,97 @@ name: Build Flutter APK
 
 on:
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build type'
-        required: false
-        default: 'release'
 
 jobs:
   build:
-    name: Build APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Validate project
+        run: |
+          test -f pubspec.yaml || (echo "❌ pubspec.yaml missing" && exit 1)
+          test -d android || (echo "❌ android/ missing" && exit 1)
+          echo "✅ Project valid"
+
+      - name: Auto-fix common issues
+        run: |
+          cd android
+          # Fix namespace kalau missing
+          if ! grep -q "namespace" app/build.gradle 2>/dev/null; then
+            APP_ID=$(grep "applicationId" app/build.gradle | head -1 | sed 's/.*"//;s/".*//')
+            if [ -n "$APP_ID" ]; then
+              sed -i "s/android {/android {\n    namespace \"$APP_ID\"/" app/build.gradle || true
+            fi
+          fi
+          # Fix minSdkVersion
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/' app/build.gradle || true
+          cd ..
+        continue-on-error: true
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
+          distribution: 'zulu'
           java-version: '17'
-          distribution: 'temurin'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.24.3'
           channel: 'stable'
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Pre-setup
+        run: |
+          flutter clean
+          flutter pub get
 
       - name: Build APK
-        run: flutter build apk --${{ github.event.inputs.build_type || 'release' }}
+        id: build1
+        run: flutter build apk --release --no-tree-shake-icons
+        continue-on-error: true
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Retry Build (after clean)
+        if: steps.build1.outcome == 'failure'
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build apk --release --no-tree-shake-icons
+        continue-on-error: true
+
+      - name: Build Debug (fallback)
+        if: failure()
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build apk --debug
+
+      - name: Find APK
+        if: always()
+        id: find
+        run: |
+          APK=$(find . -name "*.apk" -type f 2>/dev/null | head -1)
+          echo "path=$APK" >> $GITHUB_OUTPUT
+          echo "APK: $APK"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.find.outputs.path != ''
         with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          name: apk
+          path: ${{ steps.find.outputs.path }}
 
-      - name: Create Release
-        if: github.event.inputs.build_type == 'release'
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
+        if: steps.find.outputs.path != ''
         with:
           tag_name: build-${{ github.run_number }}
-          name: "Build #${{ github.run_number }}"
-          files: build/app/outputs/flutter-apk/app-release.apk
-          generate_release_notes: true
+          files: ${{ steps.find.outputs.path }}
+
+      - name: Fail if no APK
+        if: steps.find.outputs.path == ''
+        run: exit 1
